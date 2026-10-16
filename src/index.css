@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+
+@font-face {
+  font-family: "font1";
+  src: url("/Fonts/arena-font/arena.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "font2";
+  src: url("/Fonts/hussar-font/hussar.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "font3";
+  src: url("/Fonts/beautiful-police-officer-font/police-officer.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "font4";
+  src: url("/Fonts/zentry-regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face{
+  font-family: "font5";
+  src: url("/public/fonts/Changa_One/")
+}
+@font-face {
+  font-family: 'font6';
+  src: url("/public/fonts/crimson-atelier-font/");
+}
+body {
+  background-color: #111;
+}
