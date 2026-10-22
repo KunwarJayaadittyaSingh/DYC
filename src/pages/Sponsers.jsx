@@ -36,7 +36,7 @@ const SPONSORS = [
   { name: 'Amazon', logo: '/images/sponsors/amazon.jpg', url: 'https://www.amazon.com', tagline: 'Powering fast, reliable delivery for every event.' },
   { name: 'Canon', logo: '/images/sponsors/canon.png', url: 'https://in.canon/en/consumer', tagline: 'Capturing every moment in stunning detail.' },
   { name: 'Café Coffee Day', logo: '/images/sponsors/ccd.png', url: 'https://www.cafecoffeeday.com', tagline: 'Fueling late-night prep with great coffee.' },
-  { name: 'Coca-Cola', logo: '/images/sponsors/coca-cola.png', url: 'https://www.coca-colacompany.com', tagline: 'Refreshing every celebration, big or small.' },
+  { name: 'Coca-Cola', logo: '/images/sponsors/coca-cola-new.png', url: 'https://www.coca-colacompany.com', tagline: 'Refreshing every celebration, big or small.' },
   { name: 'eBay', logo: '/images/sponsors/ebay.webp', url: 'https://www.ebay.com', tagline: 'Connecting our community to what they need.' },
   { name: 'KTM', logo: '/images/sponsors/ktm.webp', url: 'https://www.ktm.com/en-int.html', tagline: 'Built for speed, just like our events.' },
   { name: 'MTV', logo: '/images/sponsors/mtv-new.png', url: 'https://www.mtv.com', tagline: 'Amplifying youth culture and creativity.' },
