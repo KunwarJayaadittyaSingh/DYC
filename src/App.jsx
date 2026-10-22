@@ -1,8 +1,10 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './Components/Navbar'
+import EventsPopup from './Components/EventsPopup'
 import Home from './pages/Home'
 import Magnitude from './pages/Magnitude'
+import MagnitudeRegister from './pages/MagnitudeRegister'
 import Youthvibe from './pages/Youthvibe'
 import Concoction from './pages/Concoction'
 import FTS from './pages/FTS'
@@ -21,9 +23,11 @@ const App = () => {
   return (
     <>
       <Navbar />
+      <EventsPopup />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/magnitude" element={<Magnitude />} />
+        <Route path="/magnitude/register" element={<MagnitudeRegister />} />
         <Route path="/youthvibe" element={<Youthvibe />} />
         <Route path="/concoction" element={<Concoction />} />
         <Route path="/fts" element={<FTS />} />

@@ -18,6 +18,7 @@ const TEAM = [
   { code: 'DYC 0013', name: 'Suryansh', role: 'Audio Visuals Lead', desc: 'Manages sound, lighting, and visual production for every event.', photo: '/images/Suryansh2.jpeg', instagram: '#', linkedin: '#' },
   { code: 'DYC 0014', name: 'Tanuj Grandhi', role: 'Promotions Lead', desc: 'Drives promotional campaigns that build hype and turnout for every event.', photo: '/images/Tanuj.JPG', instagram: 'https://www.instagram.com/tanuj_grandhi?stkn=MTB3OXB2ZWF5MzB5cg==', linkedin: 'https://www.linkedin.com/in/tanuj-grandhi/' },
   { code: 'DYC 0010', name: 'SUHAIB SHAKEEL', role: ' Male Fashion Lead', desc: 'Curates styling and fashion direction for every event\u2019s stage and shoots.', photo: '', instagram: 'https://www.instagram.com/iam_suhaib37?dlrf=MXhmaGVkMm55cTl2cw%3D%3D&utm_source=qr', linkedin: 'https://www.linkedin.com/in/suhaib-shakeel-521aa5297/' },
+  { code: 'DYC 0015', name: 'Prakhar', role: 'Fine arts Lead', desc: 'Curates styling and fashion direction for every event\u2019s stage and shoots.', photo: '', instagram: '#', linkedin: '#' },
 ]
 const initials = (name) =>
   name

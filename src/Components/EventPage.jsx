@@ -64,6 +64,7 @@ const EventPage = ({
   gallery = [],
   galleryRows = null,
   registrationLink,
+  beforeRegistration = null, // optional section shown right before "Ready to take part?"
 }) => {
   const sectionRef = useRef(null)
   const [progress, setProgress] = useState(0)
@@ -116,6 +117,9 @@ const EventPage = ({
   ]
 
   const hasGallery = rows.some((row) => row && row.length > 0)
+
+  const registerClass =
+    'bg-red-600 text-white font-bold uppercase text-sm px-10 py-4 rounded-full hover:bg-red-500 transition-colors'
 
   return (
     <div className="relative bg-black">
@@ -185,6 +189,9 @@ const EventPage = ({
         </div>
       </section>
 
+      {/* optional section placed right before registration */}
+      {beforeRegistration}
+
       <section
         ref={regRef}
         className="relative z-10 w-full min-h-[70vh] py-32 px-6 flex flex-col items-center justify-center text-center overflow-y-auto"
@@ -202,14 +209,22 @@ const EventPage = ({
         </h2>
 
         {registrationLink ? (
-          <a
-            href={registrationLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-red-600 text-white font-bold uppercase text-sm px-10 py-4 rounded-full hover:bg-red-500 transition-colors"
-          >
-            Register Now
-          </a>
+          registrationLink.startsWith('/') ? (
+            // link to a page on this site: smooth navigation, no new tab
+            <Link to={registrationLink} className={registerClass}>
+              Register Now
+            </Link>
+          ) : (
+            // outside link (Google Form etc.): opens in a new tab
+            <a
+              href={registrationLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={registerClass}
+            >
+              Register Now
+            </a>
+          )
         ) : (
           <span className="text-gray-500 border border-gray-700 rounded-full px-10 py-4 uppercase text-sm">
             Registration opens soon
