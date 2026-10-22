@@ -186,7 +186,7 @@ const Navbar = () => {
               onMouseEnter={() => moveHighlightTo('sponsors')}
               className="relative z-10 text-sm uppercase tracking-widest text-gray-300 transition-colors hover:text-red-400"
             >
-              Sponsors
+             Spotlight
             </Link>
 
             <Link
@@ -273,7 +273,7 @@ const Navbar = () => {
               onClick={() => setMobileOpen(false)}
               className="rounded-xl px-4 py-3 text-sm uppercase tracking-widest text-gray-300 hover:bg-red-500/10 hover:text-red-400"
             >
-              Sponsors
+              Spotlight
             </Link>
             <Link
               to="/gallery"
