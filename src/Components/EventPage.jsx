@@ -123,10 +123,8 @@ const EventPage = ({
 
   return (
     <div className="relative bg-black">
+      {/* same fixed star field as the home page: the only background on this page */}
       <StarBackground />
-
-      <div className="pointer-events-none fixed inset-0 z-0 bg-linear-to-b from-black via-red-950/30 to-black" />
-      <div className="pointer-events-none fixed left-1/2 top-1/4 z-0 h-125 w-125 -translate-x-1/2 rounded-full bg-red-600/15 blur-[150px]" />
 
       <style>{`
         @keyframes dyc-marquee {
@@ -194,7 +192,7 @@ const EventPage = ({
 
       <section
         ref={regRef}
-        className="relative z-10 w-full min-h-[70vh] py-32 px-6 flex flex-col items-center justify-center text-center overflow-y-auto"
+        className="relative z-10 w-full min-h-[70vh] py-32 px-6 flex flex-col items-center justify-center text-center"
         style={{
           opacity: regInView ? 1 : 0,
           transform: regInView ? 'translateY(0)' : 'translateY(50px)',

@@ -18,6 +18,7 @@ const DOMAIN_OPTIONS = [
   'Marketing & Social Media',
   'Content & Documentation',
   'Event Management',
+  'Visual Oops',
 ]
 
 const EXPERIENCE_OPTIONS = ['No Prior Experience', 'Beginner', 'Intermediate', 'Advanced']
@@ -32,15 +33,11 @@ const initialForm = {
   fullName: '',
   contactNumber: '',
   email: '',
-  age: '',
-  location: '',
-  college: '',
   role: '',
   domain: '',
   experience: '',
   skills: '',
   reason: '',
-  portfolio: '',
   availability: '',
   additional: '',
 }
@@ -201,43 +198,6 @@ const JoinUs = () => {
                 focusClass={FOCUS_CLASS}
               />
               <FormField
-                label="Age"
-                name="age"
-                type="number"
-                value={form.age}
-                onChange={handleChange}
-                placeholder="19"
-                required
-                accentText={ACCENT_TEXT}
-                focusClass={FOCUS_CLASS}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <FormField
-                label="City / Location"
-                name="location"
-                value={form.location}
-                onChange={handleChange}
-                placeholder="Jalandhar, Punjab"
-                required
-                accentText={ACCENT_TEXT}
-                focusClass={FOCUS_CLASS}
-              />
-              <FormField
-                label="College / Organization"
-                name="college"
-                value={form.college}
-                onChange={handleChange}
-                placeholder="Lovely Professional University"
-                required
-                accentText={ACCENT_TEXT}
-                focusClass={FOCUS_CLASS}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <FormField
                 label="Current Role / Occupation"
                 name="role"
                 value={form.role}
@@ -247,6 +207,9 @@ const JoinUs = () => {
                 accentText={ACCENT_TEXT}
                 focusClass={FOCUS_CLASS}
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <SelectField
                 label="Domain / Department"
                 name="domain"
@@ -257,9 +220,6 @@ const JoinUs = () => {
                 accentText={ACCENT_TEXT}
                 focusClass={FOCUS_CLASS}
               />
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <SelectField
                 label="Experience Level"
                 name="experience"
@@ -270,6 +230,9 @@ const JoinUs = () => {
                 accentText={ACCENT_TEXT}
                 focusClass={FOCUS_CLASS}
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <SelectField
                 label="Availability"
                 name="availability"
@@ -280,18 +243,17 @@ const JoinUs = () => {
                 accentText={ACCENT_TEXT}
                 focusClass={FOCUS_CLASS}
               />
+              <FormField
+                label="Relevant Skills"
+                name="skills"
+                value={form.skills}
+                onChange={handleChange}
+                placeholder="Photography, editing, React..."
+                required
+                accentText={ACCENT_TEXT}
+                focusClass={FOCUS_CLASS}
+              />
             </div>
-
-            <FormField
-              label="Relevant Skills"
-              name="skills"
-              value={form.skills}
-              onChange={handleChange}
-              placeholder="Photography, editing, public speaking, React..."
-              required
-              accentText={ACCENT_TEXT}
-              focusClass={FOCUS_CLASS}
-            />
 
             <FormField
               label="Why do you want to join?"
@@ -302,16 +264,6 @@ const JoinUs = () => {
               onChange={handleChange}
               placeholder="Tell us what draws you to DYC..."
               required
-              accentText={ACCENT_TEXT}
-              focusClass={FOCUS_CLASS}
-            />
-
-            <FormField
-              label="Previous Experience / Portfolio Link"
-              name="portfolio"
-              value={form.portfolio}
-              onChange={handleChange}
-              placeholder="https://your-portfolio.com (optional)"
               accentText={ACCENT_TEXT}
               focusClass={FOCUS_CLASS}
             />

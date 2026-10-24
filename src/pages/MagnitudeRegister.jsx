@@ -255,7 +255,7 @@ const Countdown = ({ target, label, onDone }) => {
       <p className="mb-3 text-xs font-semibold uppercase tracking-[0.25em] text-red-400">{label}</p>
       <div className="flex gap-3">
         {parts.map(([k, v]) => (
-          <div key={k} className="min-w-[4.5rem] rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-3 text-center backdrop-blur-md">
+          <div key={k} className="min-w-18 rounded-2xl border border-white/10 bg-white/4 px-3 py-3 text-center backdrop-blur-md">
             <p className="font-display text-3xl tabular-nums leading-none text-white" style={{ textShadow: '0 0 30px rgba(239,68,68,0.5)' }}>
               {String(v).padStart(2, '0')}
             </p>
@@ -382,7 +382,7 @@ const EventCard = ({ ev, status, registered, onRegister }) => {
               Opens soon
             </div>
           ) : (
-            <div className="w-full rounded-full border border-white/10 bg-white/[0.03] py-3.5 text-center text-xs font-bold uppercase tracking-[0.16em] text-white/40">
+            <div className="w-full rounded-full border border-white/10 bg-white/3 py-3.5 text-center text-xs font-bold uppercase tracking-[0.16em] text-white/40">
               Registration closed 🔒
             </div>
           )}
@@ -597,7 +597,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
   )
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="reg-title">
+    <div className="fixed inset-0 z-100 flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="reg-title">
       <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={onClose} />
 
       <div
@@ -783,7 +783,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                   )}
 
                   {members.map((m, i) => (
-                    <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div key={i} className="rounded-2xl border border-white/10 bg-white/3 p-4">
                       <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-red-400">Member {i + 2}</p>
                       <div className="grid gap-4 sm:grid-cols-2">
                         <Field id={`f-m${i}name`} label="Full name" error={errors[`m${i}name`]}>
@@ -873,7 +873,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                   </div>
 
                   {/* honeypot: hidden from people, bots fill it in */}
-                  <div className="absolute -left-[9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
+                  <div className="absolute left-[-9999px] h-0 w-0 overflow-hidden" aria-hidden="true">
                     <label>
                       Website
                       <input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={onText('website')} />
@@ -985,7 +985,7 @@ export default function MagnitudeRegister() {
     <div className="font-body relative min-h-screen w-full overflow-x-clip bg-black text-white">
       <StarBackground />
       <div className="pointer-events-none fixed inset-0 z-0 bg-linear-to-t from-red-950/50 via-transparent to-black/40" />
-      <div className="pointer-events-none fixed left-1/2 top-24 z-0 h-[26rem] w-[26rem] -translate-x-1/2 rounded-full bg-red-600/20 blur-[120px]" />
+      <div className="pointer-events-none fixed left-1/2 top-24 z-0 h-104 w-104 -translate-x-1/2 rounded-full bg-red-600/20 blur-[120px]" />
 
       <Link
         to="/magnitude"

@@ -102,7 +102,7 @@ export default function EventsPopup() {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      className="fixed inset-0 z-200 flex items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="events-popup-title"
@@ -138,7 +138,7 @@ export default function EventsPopup() {
 
         <ul className="relative space-y-3 overflow-y-auto px-5 pb-5">
           {open.map((e) => (
-            <li key={e.path} className="rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <li key={e.path} className="rounded-2xl border border-white/10 bg-white/4 p-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">

@@ -14,6 +14,7 @@ import ContactPage from './pages/ContactPage'
 import JoinUs from './pages/JoinUs'
 import OurStory from './pages/OurStory'
 import Team from './pages/Team'
+import Achievements from './pages/Achievements'
 import Sponsers from './pages/Sponsers'
 import Gallery from './pages/Gallery'
 import Help from './pages/Help'
@@ -37,6 +38,7 @@ const App = () => {
         <Route path="/join" element={<JoinUs />} />
         <Route path="/our-story" element={<OurStory />} />
         <Route path="/team" element={<Team />} />
+        <Route path="/achievements" element={<Achievements />} />
         <Route path="/sponsors" element={<Sponsers />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/help" element={<Help />} />

@@ -188,7 +188,7 @@ const PolicyModal = ({ initial, onClose }) => {
   }, [])
 
   return (
-    <div className='fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-6' role='dialog' aria-modal='true' aria-labelledby='policy-title'>
+    <div className='fixed inset-0 z-100 flex items-end justify-center sm:items-center sm:p-6' role='dialog' aria-modal='true' aria-labelledby='policy-title'>
       <div className='absolute inset-0 bg-black/85 backdrop-blur-md' onClick={onClose} />
 
       <div
@@ -262,7 +262,7 @@ const PolicyModal = ({ initial, onClose }) => {
             ))}
           </div>
 
-          <p className='mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm leading-relaxed text-gray-400'>
+          <p className='mt-10 rounded-2xl border border-white/10 bg-white/3 p-5 text-sm leading-relaxed text-gray-400'>
             Questions about this {tab === 'privacy' ? 'policy' : 'document'}? Reach out through our{' '}
             <Link to='/contact' onClick={onClose} className='text-red-400 underline underline-offset-4 hover:text-red-300'>
               contact page

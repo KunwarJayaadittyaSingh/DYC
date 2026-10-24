@@ -3,8 +3,8 @@ import { Link, useLocation } from 'react-router-dom'
 
 const EVENTS = [
   { name: 'Youthvibe', path: '/youthvibe' },
-  { name: 'Freshmen Talent Search', path: '/fts' },
   { name: 'Magnitude', path: '/magnitude' },
+  { name: 'Freshmen Talent Search', path: '/fts' },
   { name: 'Concoction', path: '/concoction' },
   { name: 'TEDx', path: '/tedx' },
   { name: 'Hult Prize', path: '/hult-prize' },
@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { key: 'home', path: '/' },
   { key: 'about', path: '/our-story' },
   { key: 'team', path: '/team' },
+  { key: 'achievements', path: '/achievements' },
   { key: 'sponsors', path: '/sponsors' },
   { key: 'gallery', path: '/gallery' },
 ]
@@ -93,7 +94,7 @@ const Navbar = () => {
           <div
             ref={containerRef}
             onMouseLeave={handleMouseLeaveGroup}
-            className="relative flex items-center gap-8"
+            className="relative flex items-center gap-6 lg:gap-8"
           >
             {/* Sliding glass highlight — never targets Events */}
             <div
@@ -181,12 +182,21 @@ const Navbar = () => {
             </Link>
 
             <Link
+              to="/achievements"
+              ref={(el) => (linkRefs.current.achievements = el)}
+              onMouseEnter={() => moveHighlightTo('achievements')}
+              className="relative z-10 text-sm uppercase tracking-widest text-gray-300 transition-colors hover:text-red-400"
+            >
+              Achievements
+            </Link>
+
+            <Link
               to="/sponsors"
               ref={(el) => (linkRefs.current.sponsors = el)}
               onMouseEnter={() => moveHighlightTo('sponsors')}
               className="relative z-10 text-sm uppercase tracking-widest text-gray-300 transition-colors hover:text-red-400"
             >
-             Spotlight
+              Spotlight
             </Link>
 
             <Link
@@ -267,6 +277,13 @@ const Navbar = () => {
               className="rounded-xl px-4 py-3 text-sm uppercase tracking-widest text-gray-300 hover:bg-red-500/10 hover:text-red-400"
             >
               Team
+            </Link>
+            <Link
+              to="/achievements"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-xl px-4 py-3 text-sm uppercase tracking-widest text-gray-300 hover:bg-red-500/10 hover:text-red-400"
+            >
+              Achievements
             </Link>
             <Link
               to="/sponsors"
