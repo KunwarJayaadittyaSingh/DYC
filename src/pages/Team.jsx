@@ -457,7 +457,7 @@ const Team = () => {
       className="team-root relative min-h-screen w-full overflow-hidden bg-[#070606] text-white"
     >
       <ProgressBar />
-      <div ref={spot} aria-hidden="true" className="team-spot pointer-events-none fixed inset-0 z-[20]" />
+      <div ref={spot} aria-hidden="true" className="team-spot pointer-events-none fixed inset-0 z-20" />
 
       <main className="relative z-10 w-full">
         {/* ---------- Hero: stage with light beams ---------- */}

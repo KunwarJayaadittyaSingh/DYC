@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import StarBackground from '../Components/StarBackground'
 
@@ -116,13 +116,20 @@ const HIGHLIGHTS = [
 // The words that rotate under the headline.
 const WORDS = ['storytellers', 'stage builders', 'problem solvers', 'late-night hackers', 'crowd starters']
 
-// "Our journey" timeline. Placeholders. Add or remove rows freely.
-const MILESTONES = [
-  { year: '2023', title: 'The society begins', text: 'The first batch of members, the first meeting and the first small event on campus.' },
-  { year: '2024', title: 'First big stage', text: 'Our first large event is hosted and the first hackathon teams travel off campus.' },
-  { year: '2025', title: 'Growing across colleges', text: 'More institutions join our events and members start winning at outside competitions.' },
-  { year: '2026', title: 'Recognised beyond campus', text: 'Awards, guests of honour and a bigger audience for everything we run.' },
+// "By the numbers" section. ALL PLACEHOLDERS, replace with your real figures.
+// Year by year: the curve shows members; events and awards print beside it.
+const YEARLY = [
+  { year: '2023', members: 30, events: 2, awards: 3 },
+  { year: '2024', members: 90, events: 4, awards: 9 },
+  { year: '2025', members: 190, events: 7, awards: 18 },
+  { year: '2026', members: 320, events: 11, awards: 22 },
 ]
+
+// Students reached per event. Keys match the event ids above.
+const REACH = { 'igc-mun': 1200, 'achievers-meet': 400, 'coke-studio': 1500, hackathons: 120 }
+const REACH_ROWS = ALL_EVENTS.map((e) => ({ id: e.id, name: e.name, value: REACH[e.id] ?? 0 })).sort(
+  (x, y) => y.value - x.value
+)
 
 const FILTERS = [
   { id: 'all', label: 'All', count: ALL_EVENTS.length },
@@ -225,7 +232,6 @@ const useRevealOnView = (options = {}) => {
 // compute(rect, viewportHeight) must return a number. `still` is used for reduced motion.
 const centreOffset = (r, vh) =>
   Math.max(-1, Math.min(1, (r.top + r.height / 2 - vh / 2) / (vh / 2 + r.height / 2)))
-const drawProgress = (r, vh) => Math.max(0, Math.min(1, (vh * 0.65 - r.top) / r.height))
 const exitProgress = (r, vh) => Math.max(0, Math.min(1, -r.top / (vh * 0.7)))
 
 const useScrollVar = (name, compute, still = 0) => {
@@ -345,7 +351,7 @@ const ScrollProgress = () => {
   }, [])
 
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5">
+    <div aria-hidden="true" className="pointer-events-none fixed inset-x-0 top-0 z-60 h-0.5">
       <div
         ref={bar}
         className="h-full origin-left bg-linear-to-r from-red-800 via-red-500 to-orange-400"
@@ -510,7 +516,7 @@ const Lightbox = ({ state, onClose, onStep, onGo }) => {
   return (
     <div
       ref={dialogRef}
-      className="ach-fade fixed inset-0 z-[100] flex flex-col items-center justify-center p-4"
+      className="ach-fade fixed inset-0 z-100 flex flex-col items-center justify-center p-4"
       role="dialog"
       aria-modal="true"
       aria-label={item.label}
@@ -743,7 +749,7 @@ const EventBlock = ({ event, index, tag, flip, onOpen }) => {
         {/* Photo collage: moves with the mouse, hover to straighten, click to enlarge, shuffle to reorder */}
         <Reveal from={flip ? 'left' : 'right'} delay={120} className="lg:col-span-7">
           <div
-            className="relative h-[22rem] sm:h-[28rem] lg:h-[32rem]"
+            className="relative h-88 sm:h-112 lg:h-128"
             onPointerMove={onMove}
             onPointerLeave={onLeave}
           >
@@ -851,54 +857,325 @@ const FilterTabs = ({ value, onChange }) => {
   )
 }
 
-// Vertical timeline whose red line draws itself as you scroll.
-const Timeline = () => {
-  const ref = useScrollVar('--tp', drawProgress, 1)
+/* ---------------- By the numbers ---------------- */
 
+const clamp01 = (n) => Math.max(0, Math.min(1, n))
+
+/* ---- growth chart geometry (viewBox units) ---- */
+const GW = 640
+const GH = 340
+const GPAD = { l: 36, r: 36, t: 44, b: 52 }
+const G_MAX = Math.max(...YEARLY.map((y) => y.members)) * 1.08
+const G_LAST = YEARLY.length - 1
+
+// Smooth curve through the yearly member counts (cubic Hermite, no overshoot for rising data).
+const growthAt = (t) => {
+  const v = YEARLY.map((y) => y.members)
+  const d = v.slice(1).map((x, i) => x - v[i])
+  const m = v.map((_, i) => (i === 0 ? d[0] : i === G_LAST ? d[G_LAST - 1] : (d[i - 1] + d[i]) / 2))
+  const i = Math.min(G_LAST - 1, Math.max(0, Math.floor(t)))
+  const f = t - i
+  const f2 = f * f
+  const f3 = f2 * f
   return (
-    <section aria-labelledby="journey-title" className="mx-auto max-w-5xl px-5 py-24 sm:px-8 md:py-32">
-      <Reveal className="text-center">
-        <p className="text-sm uppercase tracking-widest text-red-600">Our journey</p>
-        <h2 id="journey-title" className="ach-font mt-3 text-3xl uppercase leading-tight text-white md:text-5xl">
-          How we got here
-        </h2>
-      </Reveal>
-
-      <div ref={ref} className="relative mt-16">
-        <div aria-hidden="true" className="absolute bottom-0 left-4 top-0 w-px -translate-x-1/2 bg-white/10 md:left-1/2">
-          <div
-            className="absolute inset-0 origin-top bg-linear-to-b from-red-600 via-red-500 to-orange-400 shadow-[0_0_14px_rgba(239,68,68,0.8)]"
-            style={{ transform: 'scaleY(var(--tp, 0))' }}
-          />
-        </div>
-
-        <ol className="space-y-14">
-          {MILESTONES.map((m, i) => {
-            const left = i % 2 === 0
-            return (
-              <li key={m.year + m.title} className="relative pl-12 md:grid md:grid-cols-2 md:gap-x-20 md:pl-0">
-                <span
-                  aria-hidden="true"
-                  className="absolute left-4 top-3 h-3.5 w-3.5 -translate-x-1/2 rounded-full border-2 border-red-500 bg-black shadow-[0_0_16px_rgba(239,68,68,0.9)] md:left-1/2"
-                />
-                <Reveal
-                  from={left ? 'left' : 'right'}
-                  className={left ? 'md:col-start-1 md:text-right' : 'md:col-start-2'}
-                >
-                  <p className="ach-font text-4xl leading-none md:text-5xl" style={outline(1.5, 'rgba(239,68,68,0.85)')}>
-                    {m.year}
-                  </p>
-                  <h3 className="mt-3 text-xl font-semibold text-white">{m.title}</h3>
-                  <p className="mt-2 leading-relaxed text-gray-400">{m.text}</p>
-                </Reveal>
-              </li>
-            )
-          })}
-        </ol>
-      </div>
-    </section>
+    (2 * f3 - 3 * f2 + 1) * v[i] + (f3 - 2 * f2 + f) * m[i] + (-2 * f3 + 3 * f2) * v[i + 1] + (f3 - f2) * m[i + 1]
   )
 }
+const gx = (t) => GPAD.l + (t / G_LAST) * (GW - GPAD.l - GPAD.r)
+const gy = (v) => GH - GPAD.b - (v / G_MAX) * (GH - GPAD.t - GPAD.b)
+
+const G_POINTS = Array.from({ length: 121 }, (_, k) => {
+  const t = (k / 120) * G_LAST
+  return [gx(t), gy(growthAt(t))]
+})
+const G_LINE = G_POINTS.map(([x, y], k) => `${k ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
+const G_AREA = `${G_LINE} L${gx(G_LAST).toFixed(1)} ${GH - GPAD.b} L${gx(0).toFixed(1)} ${GH - GPAD.b} Z`
+
+// Pinned stage: scroll and the member count climbs while the curve draws itself.
+const GrowthStage = () => {
+  const wrap = useRef(null)
+  const still = reducedMotion()
+  const [p, setP] = useState(still ? 1 : 0)
+
+  useEffect(() => {
+    if (still) return
+    let raf = 0
+    const update = () => {
+      raf = 0
+      if (!wrap.current) return
+      const r = wrap.current.getBoundingClientRect()
+      const span = r.height - window.innerHeight
+      setP(span > 0 ? clamp01(-r.top / span) : 1)
+    }
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [still])
+
+  const t = p * G_LAST
+  const idx = Math.round(t)
+  const cur = YEARLY[idx]
+  const members = Math.round(growthAt(t))
+  const mx = gx(t)
+  const my = gy(growthAt(t))
+
+  const goYear = (i) => {
+    if (still || !wrap.current) {
+      setP(i / G_LAST)
+      return
+    }
+    const r = wrap.current.getBoundingClientRect()
+    const span = r.height - window.innerHeight
+    window.scrollTo({ top: window.scrollY + r.top + span * (i / G_LAST) + 1, behavior: 'smooth' })
+  }
+
+  return (
+    <div ref={wrap} className="relative mt-12" style={{ height: still ? 'auto' : `${YEARLY.length * 70 + 30}vh` }}>
+      <div className={still ? 'py-10' : 'sticky top-0 flex h-screen items-center'}>
+        <div className="grid w-full items-center gap-6 lg:grid-cols-12 lg:gap-10">
+          <div className="lg:col-span-5">
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Active members</p>
+            <p
+              className="ach-font mt-3 text-[clamp(4.5rem,15vw,9.5rem)] leading-none text-white"
+              style={{ textShadow: glow }}
+              aria-live="off"
+            >
+              {members}
+            </p>
+            <p className="ach-font mt-3 text-4xl leading-none md:text-6xl" style={outline(1.2, 'rgba(239,68,68,0.9)')}>
+              {cur.year}
+            </p>
+            <p className="mt-5 flex gap-6 text-sm text-gray-300">
+              <span>
+                <b className="ach-font mr-1.5 text-white">{cur.events}</b>events
+              </span>
+              <span>
+                <b className="ach-font mr-1.5 text-white">{cur.awards}</b>awards
+              </span>
+            </p>
+
+            <div role="group" aria-label="Jump to a year" className="mt-7 flex flex-wrap gap-2">
+              {YEARLY.map((y, i) => (
+                <button
+                  key={y.year}
+                  type="button"
+                  aria-pressed={idx === i}
+                  onClick={() => goYear(i)}
+                  className={`rounded-full border px-4 py-1.5 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-red-400 ${
+                    idx === i
+                      ? 'border-red-500 bg-red-600 text-white shadow-[0_0_20px_rgba(239,68,68,0.45)]'
+                      : 'border-white/15 text-gray-400 hover:border-red-400 hover:text-red-400'
+                  }`}
+                >
+                  {y.year}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-7">
+            <svg
+              viewBox={`0 0 ${GW} ${GH}`}
+              className="w-full overflow-visible"
+              role="img"
+              aria-label={`Members per year: ${YEARLY.map((y) => `${y.year}, ${y.members}`).join('; ')}.`}
+            >
+              <defs>
+                <linearGradient id="g-area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#ef4444" stopOpacity="0.45" />
+                  <stop offset="1" stopColor="#ef4444" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="g-line" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stopColor="#dc2626" />
+                  <stop offset="1" stopColor="#fb923c" />
+                </linearGradient>
+                <clipPath id="g-clip">
+                  <rect x="0" y="-20" width={mx} height={GH + 40} />
+                </clipPath>
+              </defs>
+
+              {[0, 1, 2, 3].map((k) => {
+                const y = GPAD.t + (k / 3) * (GH - GPAD.t - GPAD.b)
+                return <line key={k} x1={GPAD.l} x2={GW - GPAD.r} y1={y} y2={y} stroke="rgba(255,255,255,0.07)" />
+              })}
+
+              {YEARLY.map((y, i) => (
+                <line
+                  key={y.year}
+                  x1={gx(i)}
+                  x2={gx(i)}
+                  y1={gy(y.members)}
+                  y2={GH - GPAD.b}
+                  stroke="rgba(239,68,68,0.3)"
+                  strokeDasharray="3 5"
+                />
+              ))}
+
+              <g clipPath="url(#g-clip)">
+                <path d={G_AREA} fill="url(#g-area)" />
+                <path
+                  d={G_LINE}
+                  fill="none"
+                  stroke="url(#g-line)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{ filter: 'drop-shadow(0 0 8px rgba(239,68,68,0.8))' }}
+                />
+              </g>
+
+              {YEARLY.map((y, i) => {
+                const reached = t >= i - 0.02
+                return (
+                  <g key={y.year}>
+                    <circle
+                      cx={gx(i)}
+                      cy={gy(y.members)}
+                      r="6"
+                      fill={reached ? '#ef4444' : '#000'}
+                      stroke={reached ? '#fff' : 'rgba(239,68,68,0.5)'}
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={gx(i)}
+                      y={gy(y.members) - 16}
+                      textAnchor="middle"
+                      className="ach-font"
+                      fill="#fff"
+                      fontSize="16"
+                      style={{ opacity: reached ? 1 : 0, transition: 'opacity .4s ease' }}
+                    >
+                      {y.members}
+                    </text>
+                    <text
+                      x={gx(i)}
+                      y={GH - GPAD.b + 28}
+                      textAnchor="middle"
+                      className="ach-font"
+                      fontSize="14"
+                      fill={idx === i ? '#f87171' : 'rgba(255,255,255,0.4)'}
+                      style={{ transition: 'fill .3s ease' }}
+                    >
+                      {y.year}
+                    </text>
+                  </g>
+                )
+              })}
+
+              {/* the leading dot */}
+              <circle cx={mx} cy={my} r="16" fill="rgba(239,68,68,0.25)" />
+              <circle cx={mx} cy={my} r="7" fill="#fff" />
+            </svg>
+          </div>
+        </div>
+
+        {!still && (
+          <p
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 bottom-6 text-center text-[10px] uppercase tracking-[0.35em] text-gray-500 transition-opacity duration-500"
+            style={{ opacity: p < 0.04 ? 1 : 0 }}
+          >
+            Keep scrolling ↓
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Students reached: one glowing orb per event. Area is proportional to the crowd.
+const ReachOrbs = ({ onJump }) => {
+  const [ref, inView] = useRevealOnView({ threshold: 0.25 })
+  const max = Math.max(...REACH_ROWS.map((r) => r.value), 1)
+
+  return (
+    <div className="mt-24 md:mt-32">
+      <Reveal className="text-center">
+        <h3 className="ach-font text-2xl uppercase text-white md:text-3xl">Students reached</h3>
+        <p className="mt-3 text-sm text-gray-500">Bigger orb, bigger crowd. Select one to jump to the event.</p>
+      </Reveal>
+
+      <div
+        ref={ref}
+        className="mt-14 flex flex-wrap items-center justify-center gap-x-10 gap-y-14 md:gap-x-16"
+        style={{ '--orb': 'clamp(170px, 24vw, 280px)' }}
+      >
+        {REACH_ROWS.map((r, i) => {
+          const ratio = Math.max(0.42, Math.sqrt(r.value / max))
+          const size = `calc(var(--orb) * ${ratio.toFixed(3)})`
+          const hot = i === 0
+          return (
+            <a
+              key={r.id}
+              href={`#${r.id}`}
+              onClick={(e) => onJump(e, r.id)}
+              className="group flex flex-col items-center gap-5 focus-visible:outline-2 focus-visible:outline-red-400"
+            >
+              <span
+                className="block transition-all duration-1000 ease-out"
+                style={{
+                  width: size,
+                  height: size,
+                  opacity: inView ? 1 : 0,
+                  transform: inView ? 'scale(1)' : 'scale(0.2)',
+                  transitionDelay: `${i * 140}ms`,
+                }}
+              >
+                <span
+                  className="ach-orb ach-float grid h-full w-full place-items-center rounded-full text-center"
+                  style={{
+                    animationDuration: `${6 + i * 1.3}s`,
+                    animationDelay: `${i * -1.7}s`,
+                    background: hot
+                      ? 'radial-gradient(circle at 32% 26%, rgba(255,255,255,.55), transparent 28%), radial-gradient(circle at 50% 55%, #fb923c, #dc2626 55%, #5b0f0f 100%)'
+                      : 'radial-gradient(circle at 32% 26%, rgba(255,255,255,.4), transparent 28%), radial-gradient(circle at 50% 55%, #ef4444, #991b1b 60%, #2a0707 100%)',
+                  }}
+                >
+                  <span className="flex flex-col items-center">
+                    <span className="ach-font text-[clamp(1.3rem,2.8vw,2.6rem)] leading-none text-white">
+                      <CountUp value={r.value.toLocaleString('en-US')} />
+                    </span>
+                    <span className="mt-1.5 text-[10px] uppercase tracking-[0.2em] text-white/70">students</span>
+                  </span>
+                </span>
+              </span>
+
+              <span className="ach-font text-sm uppercase text-white transition-colors group-hover:text-red-400 md:text-base">
+                {r.name} <span aria-hidden="true">→</span>
+              </span>
+            </a>
+          )
+        })}
+      </div>
+
+      <p className="mt-12 text-center text-xs text-gray-600">
+        Orb area matches the crowd size. The smallest orbs are nudged up a little so the numbers stay readable.
+      </p>
+    </div>
+  )
+}
+
+const ScoreBoard = ({ onJump }) => (
+  <section aria-labelledby="numbers-title" className="mx-auto max-w-6xl px-5 py-24 sm:px-8 md:py-32">
+    <Reveal className="text-center">
+      <p className="text-sm uppercase tracking-widest text-red-600">By the numbers</p>
+      <h2 id="numbers-title" className="ach-font mt-3 text-3xl uppercase leading-tight text-white md:text-5xl">
+        How far we've come
+      </h2>
+    </Reveal>
+
+    <GrowthStage />
+    <ReachOrbs onJump={onJump} />
+  </section>
+)
 
 // Small dot rail on the right edge (wide screens only) showing which event you are on.
 const SideRail = ({ events, activeId }) => (
@@ -983,7 +1260,7 @@ const Achievements = () => {
     e.currentTarget.style.setProperty('--hy', '0')
   }
 
-  // Chips in the hero: show everything first, then glide to the event.
+  // Chips in the hero and orbs in "By the numbers": show everything first, then glide to the event.
   const jumpTo = (e, id) => {
     e.preventDefault()
     setFilter('all')
@@ -1104,6 +1381,17 @@ const Achievements = () => {
         .ach-reveal[data-from="zoom"] { transform: scale(.92); }
         .ach-reveal[data-in="true"] { opacity: 1; transform: none; }
 
+        @keyframes ach-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+        .ach-float { animation: ach-float 7s ease-in-out infinite; }
+        .ach-orb {
+          box-shadow: 0 0 70px rgba(239,68,68,.35), inset 0 -22px 44px rgba(0,0,0,.45);
+          transition: box-shadow .5s ease, filter .5s ease;
+        }
+        .group:hover .ach-orb, .group:focus-visible .ach-orb {
+          box-shadow: 0 0 110px rgba(239,68,68,.65), inset 0 -22px 44px rgba(0,0,0,.35);
+          filter: brightness(1.15);
+        }
+
         .ach-photo {
           rotate: var(--r, 0deg);
           z-index: var(--z, 10);
@@ -1141,6 +1429,7 @@ const Achievements = () => {
           .ach-photo img { transition: none; }
           .ach-photo::after { transition: none; }
           .ach-depth { translate: none; }
+          .ach-float { animation: none; }
           .ach-bgword, .ach-hero { transform: none; opacity: 1; }
         }
       `}</style>
@@ -1273,7 +1562,7 @@ const Achievements = () => {
           />
         )}
 
-        <Timeline />
+        <ScoreBoard onJump={jumpTo} />
 
         {/* Closing call to action, same pattern as the event pages */}
         <section className="relative flex min-h-[80vh] w-full flex-col items-center justify-center overflow-hidden px-6 py-32 text-center">
