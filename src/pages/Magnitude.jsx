@@ -10,7 +10,7 @@ import { getRegistrationLink, MAGNITUDE_FORM } from '../data/registrations'
    transparent and adds no background of its own.
    ────────────────────────────────────────────────────────────── */
 const EDITION = '25' // shows as "Magnitude 25"
-const ABOUT_IMAGE = '' // optional, e.g. '/images/magnitude-7.jpg'. Leave '' to hide.
+const ABOUT_IMAGE = '' // optional, e.g. 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-7.jpg'. Leave '' to hide.
 const STATS = [
   { value: 3, suffix: '', label: 'Days of innovation' },
   { value: 50, suffix: '+', label: 'Events & competitions' },
@@ -36,21 +36,21 @@ const HEADLINE = [
    Photos shown in the endless photo wall after the registration section.
    ────────────────────────────────────────────────────────────── */
 const GALLERY = [
-  '/images/MAGNITUDE.jpg',
-  '/images/magnitude-2.jpg',
-  '/images/magnitude-3.jpg',
-  '/images/magnitude-4.jpg',
-  '/images/magnitude-5.jpg',
-  '/images/magnitude-6.jpg',
-  '/images/magnitude-8.jpg',
-  '/images/magnitude-9.jpg',
-  '/images/magnitude-10.jpg',
-  '/images/magnitude-11.jpg',
-  '/images/magnitude-12.jpg',
-  '/images/magnitude-13.jpg',
-  '/images/magnitude-14.jpg',
-  '/images/magnitude-15.jpg',
-  '/images/magnitude-16.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-2.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-3.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-4.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-5.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-6.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-8.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-9.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-10.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-11.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-12.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-13.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-14.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-15.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-16.jpg',
 ]
 
 const GALLERY_HEADLINE = [
@@ -1166,7 +1166,7 @@ const Magnitude = () => {
       <EventPage
         heading="Magnitude"
         category="LPU's Open Intra-University Cultural Fest"
-        media="/images/MAGNITUDE.jpg"
+        media="https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg"
         mediaType="image"
         description="Magnitude is DYC's flagship cultural fest — a full-scale celebration of music, dance, drama, and everything in between, open to every student across campus."
         galleryRows={[]} // the photo wall below replaces EventPage's own gallery

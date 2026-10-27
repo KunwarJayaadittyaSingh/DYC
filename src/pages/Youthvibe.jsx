@@ -14,21 +14,21 @@ import Footer from './Footer'
 /* Photos for the moving wall: add / remove files here.
    (Missing files are skipped automatically.) */
 const PHOTOS = [
-  '/images/youthvibe-1.jpg',
-  '/images/youthvibe-2.jpg',
-  '/images/youthvibe-3.jpg',
-  '/images/youthvibe-4.jpg',
-  '/images/youthvibe-5.jpg',
-  '/images/youthvibe-6.jpg',
-  '/images/youthvibe-7.jpg',
-  '/images/youthvibe-8.jpg',
-  '/images/youthvibe-9.jpg',
-  '/images/youthvibe-10.jpg',
-  '/images/youthvibe-11.jpg',
-  '/images/youthvibe-12.jpg',
-  '/images/youthvibe-13.jpg',
-  '/images/youthvibe-14.jpg',
-  '/images/youthvibe-15.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-1.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-2.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-3.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-4.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-5.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-6.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-7.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-8.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-9.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-10.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-11.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-12.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-13.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-14.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-15.jpg',
 ]
 
 const WALL_LINES = [
@@ -868,7 +868,7 @@ const Youthvibe = () => {
       <EventPage
         heading="Youthvibe"
         category="Department of Youth Capital"
-        media="/images/youthvibe-2.jpg"
+        media="https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-2.jpg"
         mediaType="image"
         description="Youthvibe is the community at the heart of DYC — students coming together to build, perform, and lead across every event under the department."
         galleryRows={[]} // the moving photo wall below replaces EventPage's own gallery

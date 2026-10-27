@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 
 const ITEMS = [
-  { type: 'video', src: '/videos/dyc-video-logo.mp4' },
-  { type: 'image', src: '/images/MAGNITUDE.jpg' },
-  { type: 'video', src: '/videos/dyc-video-logo.mp4' },
-  { type: 'image', src: '/images/IMG_4623.jpg' },
-  { type: 'video', src: '/videos/dyc-video-logo.mp4' },
-  { type: 'image', src: '/images/832925557_2688947411619250_204391593947818516_n.jpg' },
-  { type: 'image', src: '/images/IMG_4624.jpg' },
+  { type: 'video', src: 'https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/dyc-video-logo.mp4' },
+  { type: 'image', src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg' },
+  { type: 'video', src: 'https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/dyc-video-logo.mp4' },
+  { type: 'image', src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/IMG_4623.jpg' },
+  { type: 'video', src: 'https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/dyc-video-logo.mp4' },
+  { type: 'image', src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/832925557_2688947411619250_204391593947818516_n.jpg' },
+  { type: 'image', src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/IMG_4624.jpg' },
   
-  // { type: 'image', src: '/images/LPU.jpeg' },
+  // { type: 'image', src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/LPU.jpeg' },
 ]
 const LOOP = [...ITEMS, ...ITEMS]
 

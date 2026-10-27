@@ -12,7 +12,7 @@ const TEDx = () => {
   return (
     <div className="bg-black">
       <section className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-black px-5 text-center text-white">
-        <img src="/images/tedx-bg.jpg" className="absolute inset-0 z-0 h-full w-full object-cover opacity-30" />
+        <img src="https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/tedx-bg.jpg" className="absolute inset-0 z-0 h-full w-full object-cover opacity-30" />
         <div className="pointer-events-none absolute inset-0 z-0 bg-linear-to-b from-black via-red-950/40 to-red-800/60" />
         <div className="pointer-events-none absolute left-1/2 top-1/3 z-0 h-125 w-125 -translate-x-1/2 rounded-full bg-red-600/20 blur-[150px]" />
 

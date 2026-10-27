@@ -10,37 +10,37 @@ const EVENT_ORDER = ['Youthvibe', 'Magnitude', 'Concoction', 'FTS', 'TEDx', 'Hul
 
 const PHOTOS_BY_EVENT = {
   Youthvibe: [
-    { src: '/images/youthvibe-2.jpg', caption: 'Youthvibe — The Community' },
-    { src: '/images/youthvibe-onstage.jpg', caption: 'Youthvibe — On Stage' },
-    { src: '/images/FTS_Group_image.jpg', caption: 'Youthvibe — Behind The Scenes' },
-    { src: '/images/youthvibe-9.jpg', caption: 'Youthvibe — The Crew' },
-    { src: '/images/youthvibe-11.jpg', caption: 'Youthvibe — Highlights' },
-    { src: '/images/youthvibe-closing.jpg', caption: 'Youthvibe — Closing Moment' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-2.jpg', caption: 'Youthvibe — The Community' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-onstage.jpg', caption: 'Youthvibe — On Stage' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg', caption: 'Youthvibe — Behind The Scenes' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-9.jpg', caption: 'Youthvibe — The Crew' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-11.jpg', caption: 'Youthvibe — Highlights' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/youthvibe-closing.jpg', caption: 'Youthvibe — Closing Moment' },
   ],
   Magnitude: [
-    { src: '/images/magnitude-2.jpg', caption: 'Magnitude — Opening Night' },
-    { src: '/images/MAGNITUDE.jpg', caption: 'Magnitude — Main Stage' },
-    { src: '/images/magnitude-10.jpg', caption: 'Magnitude — Crowd' },
-    { src: '/images/magnitude-12.jpg', caption: 'Magnitude — Finale' },
-    { src: '/images/magnitude-3.jpg', caption: 'Magnitude — Backstage' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-2.jpg', caption: 'Magnitude — Opening Night' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg', caption: 'Magnitude — Main Stage' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-10.jpg', caption: 'Magnitude — Crowd' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-12.jpg', caption: 'Magnitude — Finale' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/magnitude-3.jpg', caption: 'Magnitude — Backstage' },
   ],
   Concoction: [
-    { src: '/images/MAGNITUDE.jpg', caption: 'Concoction — The Mix' },
-    { src: '/images/FTS_Group_image.jpg', caption: 'Concoction — Collaborators' },
-    { src: '/images/MAGNITUDE.jpg', caption: 'Concoction — Live Session' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg', caption: 'Concoction — The Mix' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg', caption: 'Concoction — Collaborators' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg', caption: 'Concoction — Live Session' },
   ],
   FTS: [
-    { src: '/images/FTS_Group_image.jpg', caption: 'FTS — The Lineup' },
-    { src: '/images/MAGNITUDE.jpg', caption: 'FTS — Winners' },
-    { src: '/images/FTS_Group_image.jpg', caption: 'FTS — Green Room' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg', caption: 'FTS — The Lineup' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/MAGNITUDE.jpg', caption: 'FTS — Winners' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg', caption: 'FTS — Green Room' },
   ],
   TEDx: [
-    { src: '/images/tedx-coming-soon.jpg', caption: 'TEDx ' },
-    { src: '/images/tedx-bg.jpg', caption: 'TEDx — Group image ' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/tedx-coming-soon.jpg', caption: 'TEDx ' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/tedx-bg.jpg', caption: 'TEDx — Group image ' },
   ],
   'Hult Prize': [
-    { src: '/images/hultprize-coming-soon.jpg', caption: 'Hult Prize' },
-    { src: '/images/FTS_Group_image.jpg', caption: 'Hult Prize — Coming Soon' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/hultprize-coming-soon.jpg', caption: 'Hult Prize' },
+    { src: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg', caption: 'Hult Prize — Coming Soon' },
   ],
 }
 

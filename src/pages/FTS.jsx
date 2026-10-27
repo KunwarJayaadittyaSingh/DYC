@@ -17,21 +17,21 @@ import Footer from './Footer'
    Swap any line for a different file when you have more FTS photos.
    (Missing files are skipped automatically.) */
 const PHOTOS = [
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
-  '/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
+  'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg',
 ]
 
 // wall headline, split into lines of words (accent: true gets the red shimmer)
@@ -867,7 +867,7 @@ const FTS = () => {
       <EventPage
         heading="Freshmen Talent Search"
         category="Freshers Only"
-        media="/images/FTS_Group_image.jpg"
+        media="https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/FTS_Group_image.jpg"
         mediaType="image"
         description="FTS is where first-year students take the stage for the very first time — a competition built exclusively for freshers to showcase their talent and announce themselves to the campus."
         galleryRows={[]} // the moving photo wall below replaces EventPage's own gallery

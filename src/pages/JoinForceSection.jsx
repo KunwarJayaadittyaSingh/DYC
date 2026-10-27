@@ -33,10 +33,18 @@ const JoinForceSection = () => {
   const [buttonsRef, buttonsIn] = useSlideInView({ threshold: 0.2 })
 
   return (
-    <section className='w-full min-h-screen bg-transparent flex flex-col items-center justify-center px-4 text-center'>
+    <section className='join-body w-full min-h-screen bg-transparent flex flex-col items-center justify-center px-4 text-center'>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+        .join-display { font-family: 'Unbounded', 'Space Grotesk', sans-serif; font-weight: 800; letter-spacing: -0.01em; }
+        .join-body { font-family: 'Space Grotesk', system-ui, sans-serif; }
+        .join-mono { font-family: 'Space Mono', ui-monospace, monospace; }
+      `}</style>
+
       <p
         ref={eyebrowRef}
-        className='text-red-500 uppercase tracking-widest text-sm mb-6 transition-all duration-700'
+        className='join-mono text-red-500 uppercase tracking-widest text-sm mb-6 transition-all duration-700'
         style={{
           opacity: eyebrowIn ? 1 : 0,
           transform: eyebrowIn ? 'translateY(0)' : 'translateY(40px)',
@@ -47,7 +55,7 @@ const JoinForceSection = () => {
 
       <h2
         ref={headingRef}
-        className='font-[font7] text-white uppercase text-[6vw] leading-[0.95] mb-10 transition-all duration-1000'
+        className='join-display text-white uppercase text-[7vw] md:text-[4.2vw] leading-[1.1] mb-10 transition-all duration-1000'
         style={{
           opacity: headingIn ? 1 : 0,
           transform: headingIn ? 'translateY(0) scale(1)' : 'translateY(70px) scale(1.05)',

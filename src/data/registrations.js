@@ -18,7 +18,7 @@ export const REGISTRATIONS = [
   { name: 'Youthvibe', path: '/youthvibe', registrationLink: null, opensAt: '', closesAt: '', tagline: '', date: '' },
   { name: 'Freshmen Talent Search', path: '/fts', registrationLink: null, opensAt: '', closesAt: '', tagline: '', date: '' },
   // To open Magnitude with the form page: registrationLink: '/magnitude/register'
-  { name: 'Magnitude', path: '/magnitude', registrationLink: '/magnitude/register', opensAt: '', closesAt: '', tagline: 'Music, dance, open mic and more.', date: '' },
+  { name: 'Magnitude', path: '/magnitude', registrationLink: null , opensAt: '', closesAt: '', tagline: 'Music, dance, open mic and more.', date: '' },
   { name: 'Concoction', path: '/concoction', registrationLink: null, opensAt: '', closesAt: '', tagline: '', date: '' },
   { name: 'TEDx', path: '/tedx', registrationLink: null, opensAt: '', closesAt: '', tagline: '', date: '' },
   { name: 'Hult Prize', path: '/hult-prize', registrationLink: null, opensAt: '', closesAt: '', tagline: '', date: '' },

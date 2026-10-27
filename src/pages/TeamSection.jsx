@@ -46,9 +46,17 @@ const TeamSection = () => {
 
   return (
     <section ref={sectionRef} className="relative z-10 min-h-[220vh] w-full bg-transparent">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+        .team-display { font-family: 'Unbounded', 'Space Grotesk', sans-serif; font-weight: 800; letter-spacing: -0.01em; }
+        .team-body { font-family: 'Space Grotesk', system-ui, sans-serif; }
+        .team-mono { font-family: 'Space Mono', ui-monospace, monospace; }
+      `}</style>
+
       <div className="sticky top-0 h-screen w-full flex flex-col items-center justify-center overflow-hidden px-4 py-6">
         <p
-          className="text-red-700 uppercase tracking-widest text-xs mb-2"
+          className="team-mono text-red-700 uppercase tracking-widest text-xs mb-2"
           style={{
             opacity: headingOpacity,
             transform: `translateY(${headingY}px)`,
@@ -59,9 +67,9 @@ const TeamSection = () => {
         </p>
 
         <h2
-          className="font-[font7] text-white uppercase text-center leading-none mb-10"
+          className="team-display text-white uppercase text-center leading-tight mb-10"
           style={{
-            fontSize: 'clamp(1.25rem, 4vw, 3rem)',
+            fontSize: 'clamp(1.1rem, 3.2vw, 2.6rem)',
             opacity: headingOpacity,
             transform: `translateY(${headingY}px)`,
             filter: `blur(${headingBlur}px)`,
@@ -80,14 +88,14 @@ const TeamSection = () => {
             }}
           >
             <img
-              src="/images/IMG_4623.jpg"
+              src="https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/IMG_4623.jpg"
               alt="The DYC Team"
               className="w-full h-auto object-cover"
             />
           </div>
 
           <p
-            className="pointer-events-none mt-6 max-w-lg text-center font-bold normal-case tracking-normal text-white/90 leading-snug"
+            className="team-body pointer-events-none mt-6 max-w-lg text-center font-semibold normal-case tracking-normal text-white/90 leading-snug"
             style={{
               fontSize: 'clamp(0.8rem, 1.4vw, 1.05rem)',
               opacity: textOpacity,

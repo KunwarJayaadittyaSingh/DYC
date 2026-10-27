@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-// Add a `logo: '/images/logos/youthvibe.png'` field once you have the files —
+// Add a `logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/logos/youthvibe.png'` field once you have the files —
 // it'll render automatically in place of the video.
 const EVENTS = [
   { name: 'Youthvibe', path: '/youthvibe', video: 'https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/videos_yv1', logo: null },
@@ -84,6 +84,13 @@ const UniverseSection = () => {
 
   return (
     <section className="relative z-10 w-full bg-transparent px-6 py-24 md:px-16 md:py-40">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+        .uni-display { font-family: 'Unbounded', 'Space Grotesk', sans-serif; font-weight: 800; letter-spacing: -0.01em; }
+        .uni-body { font-family: 'Space Grotesk', system-ui, sans-serif; }
+      `}</style>
+
       <div
         ref={headingRef}
         className="mx-auto max-w-6xl text-center"
@@ -93,10 +100,10 @@ const UniverseSection = () => {
           transition: 'opacity 0.8s ease, transform 0.8s ease',
         }}
       >
-        <h2 className="font-[font5] text-[16vw] uppercase leading-none text-white md:text-[9vw]">
+        <h2 className="uni-display text-[8vw] uppercase leading-tight text-white md:text-[5vw]">
           Our Universe
         </h2>
-        <p className="mx-auto mt-6 max-w-md text-sm text-gray-400 md:text-base">
+        <p className="uni-body mx-auto mt-6 max-w-md text-sm text-gray-400 md:text-base">
           Every event, every initiative — one connected DYC ecosystem.
         </p>
       </div>
