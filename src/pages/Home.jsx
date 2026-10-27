@@ -15,7 +15,7 @@ const Home = () => {
 
       <div className="relative z-10">
         <CinematicHero
-          videoSrc="https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/IMG_6966.mp4"
+          videoSrc="/videos/IMG_6966.mp4"
           heroWord="DYC"
           belowText="Department of Youth Capital"
         />

@@ -21,7 +21,7 @@ const Video = () => {
         loop
         muted
         playsInline
-        src="https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/IMG_6966.mp4"
+        src="/videos/IMG_6966.mp4"
       />
 
       <div className='absolute inset-0 z-10 flex flex-col justify-between p-8'>

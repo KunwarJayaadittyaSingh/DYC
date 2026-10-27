@@ -12,7 +12,7 @@ const HomeBottomtext = () => {
       <div className='absolute bottom-2 right-3 w-[16vw] h-[8vw] rounded-full overflow-hidden'>
         <video
           className='w-full h-full object-cover'
-          src="https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/dyc-video-logo.mp4"
+          src="/videos/dyc-video-logo.mp4"
           autoPlay
           loop
           muted

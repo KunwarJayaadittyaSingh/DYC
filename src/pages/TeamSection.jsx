@@ -88,7 +88,7 @@ const TeamSection = () => {
             }}
           >
             <img
-              src="https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/IMG_4623.jpg"
+              src="/images/IMG_4623.jpg"
               alt="The DYC Team"
               className="w-full h-auto object-cover"
             />

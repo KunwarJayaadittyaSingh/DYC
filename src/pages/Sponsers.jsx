@@ -13,37 +13,37 @@ const FLAGSHIP_COUNT = 4
 /*
   ARTISTS — ⚠ PLACEHOLDERS. Replace every entry with the real artists
   who performed on your campus.
-  photo    : 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/your-file.jpg'  (portrait works best, ~800x1000)
+  photo    : '/images/artists/your-file.jpg'  (portrait works best, ~800x1000)
              If missing/broken, a coloured card with initials shows instead.
   featured : true  → shown as a big headliner card
   url      : optional (Instagram / YouTube link). Leave '' to hide the button.
 */
 const ARTISTS = [
-  { name: 'Headliner Name', genre: 'Live Band', event: 'Cultural Night', year: 2025, date: '14 Mar 2025', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-01.jpg', featured: true, bio: 'Write 2–3 lines here: what they performed, how the crowd reacted, and why the night was special.', url: '' },
-  { name: 'Headliner Name Two', genre: 'EDM', event: 'Annual Fest', year: 2024, date: '22 Feb 2024', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-02.jpg', featured: true, bio: 'Write 2–3 lines here about this performance.', url: '' },
-  { name: 'Artist Name 03', genre: 'Rapper', event: 'Cultural Night', year: 2025, date: '14 Mar 2025', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-03.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 04', genre: 'Stand-up Comedy', event: 'Annual Fest', year: 2025, date: '15 Mar 2025', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-04.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 05', genre: 'Playback Singer', event: 'Annual Fest', year: 2024, date: '23 Feb 2024', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-05.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 06', genre: 'DJ', event: 'Tech Fest', year: 2024, date: '10 Oct 2024', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-06.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 07', genre: 'Folk', event: 'Cultural Night', year: 2023, date: '18 Mar 2023', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-07.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 08', genre: 'Live Band', event: 'Annual Fest', year: 2023, date: '19 Mar 2023', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-08.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 09', genre: 'Stand-up Comedy', event: 'Tech Fest', year: 2022, date: '05 Nov 2022', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-09.jpg', bio: 'Short story about this artist’s set.', url: '' },
-  { name: 'Artist Name 10', genre: 'Rapper', event: 'Cultural Night', year: 2022, date: '12 Mar 2022', photo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/artists/artist-10.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Headliner Name', genre: 'Live Band', event: 'Cultural Night', year: 2025, date: '14 Mar 2025', photo: '/images/artists/artist-01.jpg', featured: true, bio: 'Write 2–3 lines here: what they performed, how the crowd reacted, and why the night was special.', url: '' },
+  { name: 'Headliner Name Two', genre: 'EDM', event: 'Annual Fest', year: 2024, date: '22 Feb 2024', photo: '/images/artists/artist-02.jpg', featured: true, bio: 'Write 2–3 lines here about this performance.', url: '' },
+  { name: 'Artist Name 03', genre: 'Rapper', event: 'Cultural Night', year: 2025, date: '14 Mar 2025', photo: '/images/artists/artist-03.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 04', genre: 'Stand-up Comedy', event: 'Annual Fest', year: 2025, date: '15 Mar 2025', photo: '/images/artists/artist-04.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 05', genre: 'Playback Singer', event: 'Annual Fest', year: 2024, date: '23 Feb 2024', photo: '/images/artists/artist-05.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 06', genre: 'DJ', event: 'Tech Fest', year: 2024, date: '10 Oct 2024', photo: '/images/artists/artist-06.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 07', genre: 'Folk', event: 'Cultural Night', year: 2023, date: '18 Mar 2023', photo: '/images/artists/artist-07.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 08', genre: 'Live Band', event: 'Annual Fest', year: 2023, date: '19 Mar 2023', photo: '/images/artists/artist-08.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 09', genre: 'Stand-up Comedy', event: 'Tech Fest', year: 2022, date: '05 Nov 2022', photo: '/images/artists/artist-09.jpg', bio: 'Short story about this artist’s set.', url: '' },
+  { name: 'Artist Name 10', genre: 'Rapper', event: 'Cultural Night', year: 2022, date: '12 Mar 2022', photo: '/images/artists/artist-10.jpg', bio: 'Short story about this artist’s set.', url: '' },
 ]
 
 /* `logo` optional (name shows as text if missing or broken). `url` optional. */
 const SPONSORS = [
-  { name: 'Amazon', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/amazon.jpg', url: 'https://www.amazon.com', tagline: 'Powering fast, reliable delivery for every event.' },
-  { name: 'Canon', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/canon.png', url: 'https://in.canon/en/consumer', tagline: 'Capturing every moment in stunning detail.' },
-  { name: 'Café Coffee Day', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/ccd.png', url: 'https://www.cafecoffeeday.com', tagline: 'Fueling late-night prep with great coffee.' },
-  { name: 'Coca-Cola', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/coca-cola-new.png', url: 'https://www.coca-colacompany.com', tagline: 'Refreshing every celebration, big or small.' },
-  { name: 'eBay', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/ebay.webp', url: 'https://www.ebay.com', tagline: 'Connecting our community to what they need.' },
-  { name: 'KTM', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/ktm.webp', url: 'https://www.ktm.com/en-int.html', tagline: 'Built for speed, just like our events.' },
-  { name: 'MTV', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/mtv-new.png', url: 'https://www.mtv.com', tagline: 'Amplifying youth culture and creativity.' },
-  { name: 'UBON', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/ubon.jpeg', url: 'https://ubonindia.com', tagline: 'Sound that moves every crowd.' },
-  { name: 'Nook Nosh', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/nooknosh.webp', url: 'https://nooknosh.in', tagline: 'A valued partner in our journey.' },
-  { name: 'Muddy Water', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/muddy_water.jpeg', url: 'https://muddy-water.com', tagline: 'A valued partner in our journey.' },
-  { name: 'Hilary Rhoda', logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/sponsors/hilary-rhoda.jpeg', url: 'https://hilaryrhoda.in', tagline: 'A valued partner in our journey.' },
+  { name: 'Amazon', logo: '/images/sponsors/amazon.jpg', url: 'https://www.amazon.com', tagline: 'Powering fast, reliable delivery for every event.' },
+  { name: 'Canon', logo: '/images/sponsors/canon.png', url: 'https://in.canon/en/consumer', tagline: 'Capturing every moment in stunning detail.' },
+  { name: 'Café Coffee Day', logo: '/images/sponsors/ccd.png', url: 'https://www.cafecoffeeday.com', tagline: 'Fueling late-night prep with great coffee.' },
+  { name: 'Coca-Cola', logo: '/images/sponsors/coca-cola-new.png', url: 'https://www.coca-colacompany.com', tagline: 'Refreshing every celebration, big or small.' },
+  { name: 'eBay', logo: '/images/sponsors/ebay.webp', url: 'https://www.ebay.com', tagline: 'Connecting our community to what they need.' },
+  { name: 'KTM', logo: '/images/sponsors/ktm.webp', url: 'https://www.ktm.com/en-int.html', tagline: 'Built for speed, just like our events.' },
+  { name: 'MTV', logo: '/images/sponsors/mtv-new.png', url: 'https://www.mtv.com', tagline: 'Amplifying youth culture and creativity.' },
+  { name: 'UBON', logo: '/images/sponsors/ubon.jpeg', url: 'https://ubonindia.com', tagline: 'Sound that moves every crowd.' },
+  { name: 'Nook Nosh', logo: '/images/sponsors/nooknosh.webp', url: 'https://nooknosh.in', tagline: 'A valued partner in our journey.' },
+  { name: 'Muddy Water', logo: '/images/sponsors/muddy_water.jpeg', url: 'https://muddy-water.com', tagline: 'A valued partner in our journey.' },
+  { name: 'Hilary Rhoda', logo: '/images/sponsors/hilary-rhoda.jpeg', url: 'https://hilaryrhoda.in', tagline: 'A valued partner in our journey.' },
   { name: 'Pizza Hut', logo: '', url: '', tagline: 'Bakes the yummiest pizza in town.' },
   { name: "McDonald's", logo: '', url: '', tagline: 'Serves the freshest burgers.' },
   { name: 'Burger King', logo: '', url: '', tagline: 'Serves the freshest burgers.' },

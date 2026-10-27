@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-// Add a `logo: 'https://res.cloudinary.com/dqb0zmval/image/upload/q_auto,f_auto/dyc/images/logos/youthvibe.png'` field once you have the files —
+// Add a `logo: '/images/logos/youthvibe.png'` field once you have the files —
 // it'll render automatically in place of the video.
 const EVENTS = [
   { name: 'Youthvibe', path: '/youthvibe', video: 'https://res.cloudinary.com/dqb0zmval/video/upload/q_auto,f_auto/dyc/videos/videos_yv1', logo: null },
