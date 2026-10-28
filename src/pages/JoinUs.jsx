@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { supabase } from '../supabaseClient'
 import Footer from './Footer'
 import FormField from '../Components/FormField'
 import SelectField from '../Components/SelectField'
@@ -43,7 +44,9 @@ const initialForm = {
 }
 
 const JoinUs = () => {
+  // idle | sending | sent | error
   const [status, setStatus] = useState('idle')
+  const [errorMessage, setErrorMessage] = useState('')
   const [form, setForm] = useState(initialForm)
 
   const [revealed, setRevealed] = useState(false)
@@ -55,17 +58,52 @@ const JoinUs = () => {
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm((prev) => ({ ...prev, [name]: value }))
+
+    // Clear the old banner as soon as the user edits again
+    if (status === 'sent' || status === 'error') {
+      setStatus('idle')
+      setErrorMessage('')
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (status === 'sending') return
+
     setStatus('sending')
+    setErrorMessage('')
 
-    // TODO: hook this up to Supabase (or your backend of choice) later.
-    console.log('Form submitted:', form)
+    const payload = {
+      full_name: form.fullName.trim(),
+      contact_number: form.contactNumber.trim(),
+      email: form.email.trim(),
+      role: form.role.trim(),
+      domain: form.domain,
+      experience: form.experience,
+      skills: form.skills.trim(),
+      reason: form.reason.trim(),
+      availability: form.availability,
+      additional: form.additional.trim() || null,
+    }
 
-    setStatus('sent')
-    setForm(initialForm)
+    try {
+      const { error } = await supabase.from('join_applications').insert([payload])
+
+      if (error) throw error
+
+      setStatus('sent')
+      setForm(initialForm)
+    } catch (err) {
+      console.error('Supabase insert failed:', err)
+
+      setStatus('error')
+      setErrorMessage(
+        err?.code === '23505'
+          ? 'It looks like you have already applied with this email.'
+          : 'Something went wrong submitting your application. Please try again.'
+      )
+    }
   }
 
   return (
@@ -149,14 +187,14 @@ const JoinUs = () => {
           </div>
 
           {status === 'sent' && (
-            <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 text-sm text-red-300">
+            <div className="mb-8 rounded-xl border border-green-500/30 bg-green-500/10 px-5 py-4 text-sm text-green-300">
               Your application has been recorded successfully. We'll be in touch soon!
             </div>
           )}
 
           {status === 'error' && (
-            <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 text-sm text-red-300">
-              Something went wrong submitting your application. Please try again.
+            <div className="mb-8 rounded-xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+              {errorMessage}
             </div>
           )}
 

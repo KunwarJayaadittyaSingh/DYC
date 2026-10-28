@@ -1,22 +1,40 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import emailjs from '@emailjs/browser'
+import { supabase } from '../supabaseClient' // adjust path if your file lives elsewhere
 import Footer from './Footer'
 
 const CONTACT_EMAIL = 'youthvibe@lpu.co.in'
 const CONTACT_PHONE = '+91 00000 00000'
 
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+// Email is optional. If the EmailJS keys are not in .env, messages are only saved to Supabase.
+const EMAIL_CONFIGURED = Boolean(
+  EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY
+)
+
+const EMPTY_FORM = {
+  name: '',
+  email: '',
+  phone: '',
+  subject: '',
+  message: '',
+}
+
+const inputClass =
+  'contact-input w-full rounded-xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.08)]'
+
 const ContactPage = () => {
+  // idle | sending | sent | error
   const [status, setStatus] = useState('idle')
-
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
-  })
-
+  const [errorMessage, setErrorMessage] = useState('')
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [honeypot, setHoneypot] = useState('') // spam trap, real users never fill this
   const [stars, setStars] = useState([])
+  const statusRef = useRef(null)
 
   useEffect(() => {
     const generatedStars = Array.from({ length: 90 }, (_, index) => ({
@@ -32,6 +50,13 @@ const ContactPage = () => {
     setStars(generatedStars)
   }, [])
 
+  // Bring the status banner into view after submit
+  useEffect(() => {
+    if (status === 'sent' || status === 'error') {
+      statusRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [status])
+
   const handleChange = (e) => {
     const { name, value } = e.target
 
@@ -39,33 +64,88 @@ const ContactPage = () => {
       ...prev,
       [name]: value,
     }))
+
+    // Clear old banner as soon as the user starts editing again
+    if (status === 'sent' || status === 'error') {
+      setStatus('idle')
+      setErrorMessage('')
+    }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    setStatus('sending')
+    if (status === 'sending') return
 
-    const subject = form.subject || `Message from ${form.name}`
-
-    const body = `
-Name: ${form.name}
-Email: ${form.email}
-Phone: ${form.phone || 'Not provided'}
-
-Message:
-${form.message}
-    `.trim()
-
-    const mailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`
-
-    window.location.href = mailto
-
-    setTimeout(() => {
+    // Bots fill hidden fields. Pretend success and do nothing.
+    if (honeypot) {
+      console.warn('Spam trap field was filled, so the message was NOT saved.')
       setStatus('sent')
-    }, 500)
+      setForm(EMPTY_FORM)
+      return
+    }
+
+    setStatus('sending')
+    setErrorMessage('')
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      subject: form.subject.trim() || `Message from ${form.name.trim()}`,
+      message: form.message.trim(),
+    }
+
+    // 1) Save to Supabase
+    const saveToSupabase = async () => {
+      const { error } = await supabase.from('contact_messages').insert([payload])
+      if (error) throw error
+    }
+
+    // 2) Send email notification through EmailJS
+    const sendEmail = () =>
+      !EMAIL_CONFIGURED
+        ? Promise.reject(new Error('EmailJS not configured'))
+        : emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_name: payload.name,
+          from_email: payload.email,
+          phone: payload.phone || 'Not provided',
+          subject: payload.subject,
+          message: payload.message,
+          to_email: CONTACT_EMAIL,
+          reply_to: payload.email,
+        },
+        EMAILJS_PUBLIC_KEY
+      )
+
+    // Run both. The user only sees an error if BOTH fail.
+    const [dbResult, mailResult] = await Promise.allSettled([
+      saveToSupabase(),
+      sendEmail(),
+    ])
+
+    if (dbResult.status === 'fulfilled') {
+      console.info('Saved to Supabase: contact_messages')
+    }
+    if (dbResult.status === 'rejected') {
+      console.error('Supabase insert failed:', dbResult.reason)
+    }
+    if (mailResult.status === 'rejected' && EMAIL_CONFIGURED) {
+      console.error('EmailJS send failed:', mailResult.reason)
+    }
+
+    if (dbResult.status === 'fulfilled' || mailResult.status === 'fulfilled') {
+      setStatus('sent')
+      setForm(EMPTY_FORM)
+    } else {
+      setStatus('error')
+      setErrorMessage(
+        `We couldn't send your message. Please try again, or email us directly at ${CONTACT_EMAIL}.`
+      )
+    }
   }
 
   return (
@@ -253,14 +333,23 @@ ${form.message}
           </div>
 
 
-          {/* Success message */}
+          {/* Status messages */}
 
-          {status === 'sent' && (
-            <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/5 px-5 py-4 text-sm text-red-300">
-              Your message has been prepared successfully. Your email app should
-              open so you can send the message.
-            </div>
-          )}
+          <div ref={statusRef} aria-live="polite">
+
+            {status === 'sent' && (
+              <div className="mb-8 rounded-xl border border-green-500/30 bg-green-500/10 px-5 py-4 text-sm text-green-300">
+                Message sent. Thank you for reaching out. We'll get back to you soon.
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div className="mb-8 rounded-xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+                {errorMessage}
+              </div>
+            )}
+
+          </div>
 
 
           <form
@@ -268,40 +357,65 @@ ${form.message}
             className="space-y-7"
           >
 
+            {/* Honeypot (hidden from people, visible to bots) */}
+
+            <div
+              aria-hidden="true"
+              style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, overflow: 'hidden' }}
+            >
+              <label htmlFor="hp_field">Leave this field empty</label>
+              <input
+                id="hp_field"
+                type="text"
+                name="hp_field"
+                tabIndex={-1}
+                autoComplete="off"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+              />
+            </div>
+
+
             {/* Name + Email */}
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
               <div>
-                <label className="mb-3 block text-sm text-gray-300">
+                <label htmlFor="name" className="mb-3 block text-sm text-gray-300">
                   Your Name <span className="text-red-500">*</span>
                 </label>
 
                 <input
+                  id="name"
                   type="text"
                   name="name"
                   value={form.name}
                   onChange={handleChange}
                   placeholder="John Doe"
+                  autoComplete="name"
+                  maxLength={100}
                   required
-                  className="w-full rounded-xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.08)]"
+                  className={inputClass}
                 />
               </div>
 
 
               <div>
-                <label className="mb-3 block text-sm text-gray-300">
+                <label htmlFor="email" className="mb-3 block text-sm text-gray-300">
                   Email Address <span className="text-red-500">*</span>
                 </label>
 
                 <input
+                  id="email"
                   type="email"
                   name="email"
                   value={form.email}
                   onChange={handleChange}
                   placeholder="john@example.com"
+                  autoComplete="email"
+                  maxLength={150}
                   required
-                  className="w-full rounded-xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.08)]"
+                  className={inputClass}
                 />
               </div>
 
@@ -313,34 +427,39 @@ ${form.message}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
               <div>
-                <label className="mb-3 block text-sm text-gray-300">
+                <label htmlFor="phone" className="mb-3 block text-sm text-gray-300">
                   Phone Number
                 </label>
 
                 <input
+                  id="phone"
                   type="tel"
                   name="phone"
                   value={form.phone}
                   onChange={handleChange}
                   placeholder="+91 123 456 7890"
-                  className="w-full rounded-xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.08)]"
+                  autoComplete="tel"
+                  maxLength={20}
+                  className={inputClass}
                 />
               </div>
 
 
               <div>
-                <label className="mb-3 block text-sm text-gray-300">
+                <label htmlFor="subject" className="mb-3 block text-sm text-gray-300">
                   Subject <span className="text-red-500">*</span>
                 </label>
 
                 <input
+                  id="subject"
                   type="text"
                   name="subject"
                   value={form.subject}
                   onChange={handleChange}
                   placeholder="How can we help?"
+                  maxLength={150}
                   required
-                  className="w-full rounded-xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.08)]"
+                  className={inputClass}
                 />
               </div>
 
@@ -351,18 +470,20 @@ ${form.message}
 
             <div>
 
-              <label className="mb-3 block text-sm text-gray-300">
+              <label htmlFor="message" className="mb-3 block text-sm text-gray-300">
                 Your Message <span className="text-red-500">*</span>
               </label>
 
               <textarea
+                id="message"
                 name="message"
                 value={form.message}
                 onChange={handleChange}
                 placeholder="Tell us more about your inquiry..."
                 rows={7}
+                maxLength={2000}
                 required
-                className="w-full resize-none rounded-xl border border-white/10 bg-transparent px-5 py-4 text-white outline-none transition placeholder:text-gray-600 focus:border-red-500 focus:shadow-[0_0_20px_rgba(239,68,68,0.08)]"
+                className={`${inputClass} resize-none`}
               />
 
             </div>
@@ -409,7 +530,7 @@ ${form.message}
 
 
       {/* =========================
-          STAR ANIMATION
+          STAR ANIMATION + AUTOFILL FIX
       ========================== */}
 
       <style>{`
@@ -432,6 +553,22 @@ ${form.message}
 
           100% {
             transform: translate3d(0, 0, 0) scale(1);
+          }
+        }
+
+        /* Stops Chrome from painting autofilled fields light blue */
+        .contact-input:-webkit-autofill,
+        .contact-input:-webkit-autofill:hover,
+        .contact-input:-webkit-autofill:focus {
+          -webkit-text-fill-color: #ffffff;
+          caret-color: #ffffff;
+          -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset;
+          transition: background-color 9999s ease-in-out 0s;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [style*="starMove"] {
+            animation: none !important;
           }
         }
       `}</style>

@@ -8,6 +8,86 @@ import { supabase } from '../supabaseClient'
 const EV = REGISTRATIONS.find((e) => e.path === '/magnitude')
 const C = { ...EV, ...MAGNITUDE_FORM }
 
+/* ══════════════════════════════════════════════════════════════
+   ★ EVENT IMAGES + RULEBOOK PDFs — THE ONLY PLACE YOU NEED TO EDIT ★
+   ══════════════════════════════════════════════════════════════
+
+  IMAGES
+  1. Put each picture inside:   public/images/magnitude/events/
+  2. Write its path below starting with a slash and WITHOUT "public":
+        image: '/images/magnitude/events/paridhan.jpg'
+  3. The file name must match exactly, including capital letters and the
+     extension (.jpg, .jpeg, .png or .webp). Best size: 1200 x 800 px (3:2).
+  4. Until a picture exists, the card shows a coloured box with initials.
+
+  RULEBOOK PDFs
+  Paste the PDF link between the quotes after `rulebook:`. Any of these work:
+     - A Google Drive link  (Share → "Anyone with the link" → Copy link)
+     - A file in your project: put the PDF in public/rulebooks/ and write
+       '/rulebooks/paridhan.pdf'
+     - Any other web link to a PDF
+  Leave '' empty and the card shows "Rulebook soon".
+*/
+
+const EVENT_ASSETS = {
+  'paridhan': {
+    image: '/images/magnitude/events/paridhan.jpg',
+    rulebook: '',
+  },
+  'frame-focus': {
+    image: '/images/magnitude/events/frame-focus.jpg',
+    rulebook: '',
+  },
+  'open-mic': {
+    image: '/images/magnitude/events/open-mic.jpg',
+    rulebook: '',
+  },
+  'spike-showdown': {
+    image: '/images/magnitude/events/spike-showdown.jpg',
+    rulebook: '',
+  },
+  'bgmi': {
+    image: '/images/magnitude/events/bgmi.jpg',
+    rulebook: '',
+  },
+  'kitchen-king': {
+    image: '/images/magnitude/events/kitchen-king.jpg',
+    rulebook: '',
+  },
+  'arm-face-off': {
+    image: '/images/magnitude/events/arm-face-off.jpg',
+    rulebook: '',
+  },
+  'rush-to-roadies': {
+    image: '/images/magnitude/events/rush-to-roadies.jpg',
+    rulebook: '',
+  },
+  'brushstroke': {
+    image: '/images/magnitude/events/brushstroke.jpg',
+    rulebook: '',
+  },
+  'mehandi-art': {
+    image: '/images/magnitude/events/mehandi-art.jpg',
+    rulebook: '',
+  },
+  'startup-spotlight': {
+    image: '/images/magnitude/events/startup-spotlight.jpg',
+    rulebook: '',
+  },
+  'poetry-slam': {
+    image: '/images/magnitude/events/poetry-slam.jpg',
+    rulebook: '',
+  },
+  'first-act': {
+    image: '/images/magnitude/events/first-act.jpg',
+    rulebook: '',
+  },
+  'news-debate': {
+    image: '/images/magnitude/events/news-debate.jpg',
+    rulebook: '',
+  },
+}
+
 /* ──────────────────────────────────────────────────────────────
    EVENTS + REGISTRATION CONTROLS — edit freely
    ──────────────────────────────────────────────────────────────
@@ -30,35 +110,39 @@ const C = { ...EV, ...MAGNITUDE_FORM }
   group    : filter chip it belongs to
   category : red label on the card
   min/max  : team size. min = max = 1 → Solo
-  image    : /public/images/magnitude/events/<id>.jpg (falls back to a coloured card)
-  rulebook : link to the PDF / Drive. '' shows "Rulebook soon"
   extra    : optional extra field asked from the team leader
+  (image and rulebook are set in EVENT_ASSETS above)
 */
 
 const EVENT_DATE = '28 OCT - 4 NOV 25'
 const PRIZE = 'Trophies & Certificates'
 
-const img = (id) => `/images/magnitude/events/${id}.jpg`
-
-const MAGNITUDE_EVENTS = [
-  { id: 'paridhan', name: 'Paridhan', group: 'Lifestyle', category: 'Lifestyle (Group Fashion)', desc: 'A group fashion showcase featuring coordinated themes, creativity, and style synchronization.', min: 8, max: 15, image: img('paridhan'), rulebook: '' },
-  { id: 'frame-focus', name: 'Frame & Focus', group: 'Media & Production', category: 'Media & Production (Photography)', desc: 'A photography contest based on a given theme testing creativity and composition.', min: 1, max: 1, image: img('frame-focus'), rulebook: '' },
-  { id: 'open-mic', name: 'Open Mic', group: 'Literary & Theatre', category: 'Literary & Theatre', desc: 'A platform for storytelling, poetry, and stand-up performances celebrating creativity and expression.', min: 1, max: 1, image: img('open-mic'), rulebook: '' },
-  { id: 'spike-showdown', name: 'Spike Showdown (Valorant)', group: 'eSports', category: 'eSports', desc: 'A thrilling Valorant 5v5 tournament testing strategy, teamwork, and reflexes.', min: 1, max: 6, image: img('spike-showdown'), rulebook: '', extra: { label: 'Riot ID', placeholder: 'Name#TAG' } },
-  { id: 'bgmi', name: 'Battleground Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive BGMI tournament where squads battle for glory.', min: 1, max: 5, image: img('bgmi'), rulebook: '', extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
-  { id: 'kitchen-king', name: "LPU's Kitchen King", group: 'Management', category: 'Management (Cooking)', desc: 'A live cooking contest testing culinary skills, creativity, and presentation.', min: 1, max: 2, image: img('kitchen-king'), rulebook: '' },
-  { id: 'arm-face-off', name: 'Arm Face-Off', group: 'Sports', category: 'Sports', desc: 'An arm wrestling competition focusing on strength and endurance.', min: 1, max: 1, image: img('arm-face-off'), rulebook: '' },
-  { id: 'rush-to-roadies', name: 'Rush to Roadies', group: 'Sports', category: 'Sports (Fitness)', desc: 'An obstacle-based fitness challenge testing agility, stamina, and determination.', min: 1, max: 1, image: img('rush-to-roadies'), rulebook: '' },
-  { id: 'brushstroke', name: 'Brushstroke', group: 'Fine Arts', category: 'Fine Arts', desc: "A live drawing competition based on the theme 'Nature's Splendor'.", min: 1, max: 1, image: img('brushstroke'), rulebook: '' },
-  { id: 'mehandi-art', name: 'Mehandi Art', group: 'Fine Arts', category: 'Fine Arts', desc: 'A traditional Mehandi competition celebrating artistry and precision in design.', min: 1, max: 1, image: img('mehandi-art'), rulebook: '' },
-  { id: 'startup-spotlight', name: 'Startup Spotlight', group: 'Entrepreneurship', category: 'Entrepreneurship', desc: 'A startup pitch competition where participants present innovative business ideas.', min: 1, max: 5, image: img('startup-spotlight'), rulebook: '' },
-  { id: 'poetry-slam', name: 'Poetry Slam', group: 'Literary & Theatre', category: 'Literary', desc: 'A poetry performance competition where participants express emotions through powerful verses.', min: 1, max: 1, image: img('poetry-slam'), rulebook: '' },
-  { id: 'first-act', name: 'The First Act', group: 'Literary & Theatre', category: 'Theatre', desc: 'A one-act play competition testing acting, storytelling, and stage performance.', min: 1, max: 1, image: img('first-act'), rulebook: '' },
-  { id: 'news-debate', name: 'The News Debate', group: 'Literary & Theatre', category: 'Literary', desc: 'A debate competition where participants discuss contemporary issues with logic and confidence.', min: 1, max: 1, image: img('news-debate'), rulebook: '' },
+const BASE_EVENTS = [
+  { id: 'paridhan', name: 'Paridhan', group: 'Lifestyle', category: 'Lifestyle (Group Fashion)', desc: 'A group fashion showcase featuring coordinated themes, creativity, and style synchronization.', min: 8, max: 15 },
+  { id: 'frame-focus', name: 'Frame & Focus', group: 'Media & Production', category: 'Media & Production (Photography)', desc: 'A photography contest based on a given theme testing creativity and composition.', min: 1, max: 1 },
+  { id: 'open-mic', name: 'Open Mic', group: 'Literary & Theatre', category: 'Literary & Theatre', desc: 'A platform for storytelling, poetry, and stand-up performances celebrating creativity and expression.', min: 1, max: 1 },
+  { id: 'spike-showdown', name: 'Spike Showdown (Valorant)', group: 'eSports', category: 'eSports', desc: 'A thrilling Valorant 5v5 tournament testing strategy, teamwork, and reflexes.', min: 1, max: 6, extra: { label: 'Riot ID', placeholder: 'Name#TAG' } },
+  { id: 'bgmi', name: 'Battleground Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive BGMI tournament where squads battle for glory.', min: 1, max: 5, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
+  { id: 'kitchen-king', name: "LPU's Kitchen King", group: 'Management', category: 'Management (Cooking)', desc: 'A live cooking contest testing culinary skills, creativity, and presentation.', min: 1, max: 2 },
+  { id: 'arm-face-off', name: 'Arm Face-Off', group: 'Sports', category: 'Sports', desc: 'An arm wrestling competition focusing on strength and endurance.', min: 1, max: 1 },
+  { id: 'rush-to-roadies', name: 'Rush to Roadies', group: 'Sports', category: 'Sports (Fitness)', desc: 'An obstacle-based fitness challenge testing agility, stamina, and determination.', min: 1, max: 1 },
+  { id: 'brushstroke', name: 'Brushstroke', group: 'Fine Arts', category: 'Fine Arts', desc: "A live drawing competition based on the theme 'Nature's Splendor'.", min: 1, max: 1 },
+  { id: 'mehandi-art', name: 'Mehandi Art', group: 'Fine Arts', category: 'Fine Arts', desc: 'A traditional Mehandi competition celebrating artistry and precision in design.', min: 1, max: 1 },
+  { id: 'startup-spotlight', name: 'Startup Spotlight', group: 'Entrepreneurship', category: 'Entrepreneurship', desc: 'A startup pitch competition where participants present innovative business ideas.', min: 1, max: 5 },
+  { id: 'poetry-slam', name: 'Poetry Slam', group: 'Literary & Theatre', category: 'Literary', desc: 'A poetry performance competition where participants express emotions through powerful verses.', min: 1, max: 1 },
+  { id: 'first-act', name: 'The First Act', group: 'Literary & Theatre', category: 'Theatre', desc: 'A one-act play competition testing acting, storytelling, and stage performance.', min: 1, max: 1 },
+  { id: 'news-debate', name: 'The News Debate', group: 'Literary & Theatre', category: 'Literary', desc: 'A debate competition where participants discuss contemporary issues with logic and confidence.', min: 1, max: 1 },
 
   // Catch-all slot (keeps the old "Other" option from your form).
-  { id: 'other', name: 'Something else?', group: 'Other', category: 'Open Slot', isOther: true, desc: 'Have a talent that is not on the list? Tell us what you would like to perform and we will get in touch.', min: 1, max: 1, image: '', rulebook: '' },
+  { id: 'other', name: 'Something else?', group: 'Other', category: 'Open Slot', isOther: true, desc: 'Have a talent that is not on the list? Tell us what you would like to perform and we will get in touch.', min: 1, max: 1 },
 ]
+
+// Joins each event with its image + rulebook from EVENT_ASSETS above.
+const MAGNITUDE_EVENTS = BASE_EVENTS.map((e) => ({
+  ...e,
+  image: EVENT_ASSETS[e.id]?.image || '',
+  rulebook: EVENT_ASSETS[e.id]?.rulebook || '',
+}))
 
 const isSolo = (e) => e.max === 1
 const typeLabel = (e) => (isSolo(e) ? 'Solo' : `Team of ${e.min}-${e.max}`)
@@ -87,26 +171,9 @@ const COURSES = [
 const REG_RE = /^[A-Za-z0-9/-]{4,20}$/
 // ── TEST MODE: true = never show "Registered ✓", button always reopens (set false before going live)
 const TEST_MODE = true
-// RULEBOOK PDFs: one link per event id. Paste each event's PDF link between the quotes.
-// Empty '' = card shows "Rulebook soon". Links can be Google Drive ("Anyone with the link")
-// or a file in your project, e.g. '/rulebooks/paridhan.pdf' (put the PDF in public/rulebooks/).
-const RULEBOOKS = {
-  'paridhan': '',
-  'frame-focus': '',
-  'open-mic': '',
-  'spike-showdown': '',
-  'bgmi': '',
-  'kitchen-king': '',
-  'arm-face-off': '',
-  'rush-to-roadies': '',
-  'brushstroke': '',
-  'mehandi-art': '',
-  'startup-spotlight': '',
-  'poetry-slam': '',
-  'first-act': '',
-  'news-debate': '',
-}
-const getRulebook = (ev) => RULEBOOKS[ev.id] || ev.rulebook || ''
+
+const getRulebook = (ev) => (ev.rulebook || '').trim()
+
 const LS_DONE = 'magnitude:done'
 const LS_PROFILE = 'magnitude:profile'
 
