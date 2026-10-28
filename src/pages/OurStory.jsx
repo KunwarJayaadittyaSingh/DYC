@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import Footer from './Footer'
+
+/* ──────────────────────────────────────────────────────────────
+   PAGE SWITCH
+   true  = Our Story page is open
+   false = anyone visiting this page (navbar click or typed URL) is sent to Home
+   ────────────────────────────────────────────────────────────── */
+const OURSTORY_PAGE_OPEN = false
 
 /* ──────────────────────────────────────────────────────────────
    CONTENT — edit freely
@@ -719,7 +726,7 @@ const FinalCta = () => (
    PAGE
    ────────────────────────────────────────────────────────────── */
 
-const OurStory = () => {
+const OurStoryPage = () => {
   const reduced = usePrefersReducedMotion()
   const [pageProgress, setPageProgress] = useState(0)
   const glowRef = useRef(null)
@@ -823,6 +830,12 @@ const OurStory = () => {
       `}</style>
     </div>
   )
+}
+
+// Gatekeeper: while OURSTORY_PAGE_OPEN is false, this page redirects to Home.
+const OurStory = () => {
+  if (!OURSTORY_PAGE_OPEN) return <Navigate to="/" replace />
+  return <OurStoryPage />
 }
 
 export default OurStory

@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import StarBackground from '../Components/StarBackground'
+
+/* ------------------------------------------------------------------
+   PAGE SWITCH
+   true  = Achievements page is open
+   false = anyone visiting this page (navbar click or typed URL) is sent to Home
+------------------------------------------------------------------- */
+const ACHIEVEMENTS_PAGE_OPEN = false
 
 /* ------------------------------------------------------------------
    EDIT THIS SECTION ONLY.
@@ -1211,7 +1218,7 @@ const SideRail = ({ events, activeId }) => (
   </nav>
 )
 
-const Achievements = () => {
+const AchievementsPage = () => {
   const [lightbox, setLightbox] = useState(null)
   const [activeId, setActiveId] = useState(null)
   const [filter, setFilter] = useState('all')
@@ -1598,6 +1605,12 @@ const Achievements = () => {
       <Lightbox state={lightbox} onClose={closeLightbox} onStep={stepLightbox} onGo={goLightbox} />
     </main>
   )
+}
+
+// Gatekeeper: while ACHIEVEMENTS_PAGE_OPEN is false, this page redirects to Home.
+const Achievements = () => {
+  if (!ACHIEVEMENTS_PAGE_OPEN) return <Navigate to="/" replace />
+  return <AchievementsPage />
 }
 
 export default Achievements
