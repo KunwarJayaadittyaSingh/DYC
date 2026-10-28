@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Footer from './Footer'
 import StarBackground from '../Components/StarBackground'
 import { REGISTRATIONS, MAGNITUDE_FORM, getStatus } from '../data/registrations'
+import { supabase } from '../supabaseClient'
 
 const EV = REGISTRATIONS.find((e) => e.path === '/magnitude')
 const C = { ...EV, ...MAGNITUDE_FORM }
@@ -84,6 +85,28 @@ const COURSES = [
   'BA', 'MA', 'B.Sc', 'M.Sc', 'B.Des', 'LLB', 'Diploma',
 ]
 const REG_RE = /^[A-Za-z0-9/-]{4,20}$/
+// ── TEST MODE: true = never show "Registered ✓", button always reopens (set false before going live)
+const TEST_MODE = true
+// RULEBOOK PDFs: one link per event id. Paste each event's PDF link between the quotes.
+// Empty '' = card shows "Rulebook soon". Links can be Google Drive ("Anyone with the link")
+// or a file in your project, e.g. '/rulebooks/paridhan.pdf' (put the PDF in public/rulebooks/).
+const RULEBOOKS = {
+  'paridhan': '',
+  'frame-focus': '',
+  'open-mic': '',
+  'spike-showdown': '',
+  'bgmi': '',
+  'kitchen-king': '',
+  'arm-face-off': '',
+  'rush-to-roadies': '',
+  'brushstroke': '',
+  'mehandi-art': '',
+  'startup-spotlight': '',
+  'poetry-slam': '',
+  'first-act': '',
+  'news-debate': '',
+}
+const getRulebook = (ev) => RULEBOOKS[ev.id] || ev.rulebook || ''
 const LS_DONE = 'magnitude:done'
 const LS_PROFILE = 'magnitude:profile'
 
@@ -331,6 +354,7 @@ const STATUS_PILL = {
 
 const EventCard = ({ ev, status, registered, onRegister }) => {
   const [label, pillCls] = STATUS_PILL[status]
+  const rulebook = getRulebook(ev)
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/90 backdrop-blur-md transition duration-300 hover:-translate-y-1 hover:border-red-500/60 hover:shadow-[0_20px_60px_rgba(239,68,68,0.2)]">
       <div className="relative h-56 overflow-hidden bg-black">
@@ -388,9 +412,9 @@ const EventCard = ({ ev, status, registered, onRegister }) => {
           )}
 
           {!ev.isOther &&
-            (ev.rulebook ? (
+            (rulebook ? (
               <a
-                href={ev.rulebook}
+                href={rulebook}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full rounded-full border border-white/20 py-3 text-center text-xs font-bold uppercase tracking-[0.16em] text-white/80 transition hover:border-red-400/60 hover:text-white"
@@ -542,13 +566,8 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
       setErrors({ consent: 'Please confirm to continue.' })
       return
     }
-    if (!C.submitUrl) {
-      setServerError('Registration is not connected yet. Please contact the organisers.')
-      return
-    }
 
     const payload = {
-      // same fields your sheet already receives
       name: form.name.trim(),
       regNo: form.regNo.trim().toUpperCase(),
       phone: form.phone,
@@ -556,7 +575,6 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
       residence: form.residence,
       event: ev.isOther ? 'Other' : ev.name,
       otherEvent: ev.isOther ? form.otherEvent.trim() : '',
-      // new fields
       eventId: ev.id,
       eventType: typeLabel(ev),
       extraLabel: ev.extra?.label || '',
@@ -569,21 +587,31 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
     setSending(true)
     setServerError('')
     try {
-      const res = await fetch(C.submitUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload),
+      const { error } = await supabase.from('magnitude_registrations').insert({
+        event: payload.event,
+        event_id: payload.eventId,
+        event_type: payload.eventType,
+        other_event: payload.otherEvent,
+        name: payload.name,
+        reg_no: payload.regNo,
+        phone: payload.phone,
+        course: payload.course,
+        residence: payload.residence,
+        extra_label: payload.extraLabel,
+        extra_value: payload.extraValue,
+        team_name: payload.teamName,
+        team_size: payload.teamSize,
+        members: payload.members.map((m) => `${m.name} (${m.regNo})`).join('; '),
       })
-      const data = await res.json()
-      if (data.ok) {
+      if (!error) {
         writeLS(LS_PROFILE, { name: form.name, regNo: form.regNo, phone: form.phone, course: form.course, residence: form.residence })
         setDone(payload)
         onSuccess(ev.id)
-      } else if (data.error === 'duplicate') setServerError(`This registration number is already registered for ${ev.isOther ? 'this event' : ev.name}.`)
-      else if (data.error === 'closed') {
-        setServerError('Registrations have just closed.')
-        onServerClosed()
-      } else setServerError('Something went wrong. Please try again.')
+      } else if (error.code === '23505') setServerError(`This registration number is already registered for ${ev.isOther ? 'this event' : ev.name}.`)
+      else {
+        console.error(error)
+        setServerError('Something went wrong. Please try again.')
+      }
     } catch {
       setServerError('Could not reach the server. Check your internet and try again.')
     } finally {
@@ -858,10 +886,10 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                       />
                       <span>
                         I confirm the details above are correct
-                        {ev.rulebook ? (
+                        {getRulebook(ev) ? (
                           <>
                             {' '}and I have read the{' '}
-                            <a href={ev.rulebook} target="_blank" rel="noopener noreferrer" className="text-red-400 underline underline-offset-4">
+                            <a href={getRulebook(ev)} target="_blank" rel="noopener noreferrer" className="text-red-400 underline underline-offset-4">
                               rulebook
                             </a>
                           </>
@@ -879,12 +907,6 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                       <input type="text" tabIndex={-1} autoComplete="off" value={form.website} onChange={onText('website')} />
                     </label>
                   </div>
-
-                  {import.meta.env.DEV && !C.submitUrl && (
-                    <p className="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-yellow-200">
-                      Dev note: <code>submitUrl</code> is empty in <code>data/registrations.js</code>, so submitting will show an error.
-                    </p>
-                  )}
 
                   {serverError && (
                     <p role="alert" className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
@@ -971,7 +993,7 @@ export default function MagnitudeRegister() {
   }, [])
 
   const surprise = () => {
-    const pool = realEvents.filter((e) => statusOf(e) === 'open' && !done.includes(e.id))
+    const pool = realEvents.filter((e) => statusOf(e) === 'open' && (TEST_MODE || !done.includes(e.id)))
     if (pool.length) setActive(pool[Math.floor(Math.random() * pool.length)])
   }
 
@@ -1084,7 +1106,7 @@ export default function MagnitudeRegister() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((ev, i) => (
               <Reveal key={ev.id} delay={Math.min(i, 5) * 70} className="h-full">
-                <EventCard ev={ev} status={statusOf(ev)} registered={done.includes(ev.id)} onRegister={setActive} />
+                <EventCard ev={ev} status={statusOf(ev)} registered={TEST_MODE ? false : done.includes(ev.id)} onRegister={setActive} />
               </Reveal>
             ))}
           </div>
