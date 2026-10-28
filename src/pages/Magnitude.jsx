@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import EventPage from '../Components/EventPage'
 import Footer from './Footer'
 import { getRegistrationLink, MAGNITUDE_FORM } from '../data/registrations'
@@ -562,6 +563,15 @@ const Lightbox = ({ photos, index, onClose, onNav }) => {
 }
 
 /* Transparent like the About section: only the photos have a surface. */
+/* Uses React Router for internal paths (no full reload, no Vercel 404),
+   and a normal <a> for external URLs. */
+const SmartLink = ({ to, children, ...props }) =>
+  to && to.startsWith('/') ? (
+    <Link to={to} {...props}>{children}</Link>
+  ) : (
+    <a href={to} {...props}>{children}</a>
+  )
+
 const MagnitudeGallery = ({ link }) => {
   const cols = useColumnCount()
   const photos = useValidPhotos(GALLERY)
@@ -649,12 +659,12 @@ const MagnitudeGallery = ({ link }) => {
         {link && (
           <Reveal>
             <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.35em] text-white/40">Your turn</p>
-            <a
-              href={link}
+            <SmartLink
+              to={link}
               className="inline-block rounded-full bg-red-500 px-10 py-4 text-xs font-bold uppercase tracking-[0.16em] text-black transition hover:bg-red-400 hover:shadow-[0_0_50px_rgba(239,68,68,0.5)]"
             >
               Be in the next frame →
-            </a>
+            </SmartLink>
           </Reveal>
         )}
       </div>
@@ -907,9 +917,9 @@ const RegistrationCTA = ({
     ? 'REGISTER NOW • REGISTER NOW • REGISTER NOW • '
     : 'REGISTRATION OPENS SOON • REGISTRATION OPENS SOON • '
 
-  const Tag = live ? 'a' : 'div'
+  const Tag = live ? SmartLink : 'div'
   const tagProps = live
-    ? { href: link }
+    ? { to: link }
     : { role: 'status', 'aria-label': 'Registration opens soon' }
 
   return (

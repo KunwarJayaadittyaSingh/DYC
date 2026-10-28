@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import Footer from './Footer'
+
+/* ------------------------------------------------------------------
+   PAGE SWITCH
+   true  = Team page is open
+   false = anyone visiting /team (navbar click or typed URL) is sent to Home
+------------------------------------------------------------------- */
+const TEAM_PAGE_OPEN = false
 
 /* ------------------------------------------------------------------
    EDIT THIS SECTION ONLY.
@@ -441,7 +448,7 @@ const Viewfinder = () => (
   </div>
 )
 
-const Team = () => {
+const TeamPage = () => {
   const spot = useRef(null)
 
   // A red spotlight that follows the mouse across the whole page.
@@ -744,6 +751,12 @@ const Team = () => {
       `}</style>
     </div>
   )
+}
+
+// Gatekeeper: while TEAM_PAGE_OPEN is false, /team redirects to Home.
+const Team = () => {
+  if (!TEAM_PAGE_OPEN) return <Navigate to="/" replace />
+  return <TeamPage />
 }
 
 export default Team
