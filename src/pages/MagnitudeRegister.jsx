@@ -164,6 +164,7 @@ const eventStatus = (ev, base, now = Date.now()) => {
    ────────────────────────────────────────────────────────────── */
 
 const RESIDENCE = ['Day Scholar', 'Hosteller']
+const GENDERS = ['Male', 'Female', 'Other']
 const COURSES = [
   'B.Tech', 'M.Tech', 'BCA', 'MCA', 'BBA', 'MBA', 'B.Com', 'M.Com',
   'BA', 'MA', 'B.Sc', 'M.Sc', 'B.Des', 'LLB', 'Diploma',
@@ -221,6 +222,7 @@ const validateYou = (f, ev) => {
   if (!/^[6-9]\d{9}$/.test(f.phone)) e.phone = 'Enter a valid 10-digit mobile number.'
   if (f.course.trim().length < 2) e.course = 'Enter your course, for example B.Tech CSE.'
   if (!f.residence) e.residence = 'Please choose one.'
+  if (!f.gender) e.gender = 'Please select your gender.'
   if (ev.isOther && f.otherEvent.trim().length < 2) e.otherEvent = 'Tell us which event.'
   if (ev.extra && f.extra.trim().length < 2) e.extra = `Enter your ${ev.extra.label}.`
   return e
@@ -232,6 +234,7 @@ const validateTeam = (f, members) => {
   members.forEach((m, i) => {
     if (m.name.trim().length < 2) e[`m${i}name`] = 'Enter the member’s name.'
     if (!REG_RE.test(m.regNo.trim())) e[`m${i}reg`] = 'Enter a valid registration number.'
+    if (!m.gender) e[`m${i}gender`] = 'Please select the member’s gender.'
   })
   return e
 }
@@ -531,6 +534,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
     phone: profile.phone || '',
     course: profile.course || '',
     residence: profile.residence || '',
+    gender: profile.gender || '',
     otherEvent: '',
     extra: '',
     teamName: '',
@@ -538,7 +542,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
     consent: false,
     website: '', // honeypot
   })
-  const [members, setMembers] = useState(() => Array.from({ length: Math.max(ev.min - 1, 0) }, () => ({ name: '', regNo: '' })))
+  const [members, setMembers] = useState(() => Array.from({ length: Math.max(ev.min - 1, 0) }, () => ({ name: '', regNo: '', gender: '' })))
   const [errors, setErrors] = useState({})
   const [sending, setSending] = useState(false)
   const [serverError, setServerError] = useState('')
@@ -594,7 +598,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
     setForm((f) => ({ ...f, size }))
     setMembers((prev) => {
       const next = prev.slice(0, size - 1)
-      while (next.length < size - 1) next.push({ name: '', regNo: '' })
+      while (next.length < size - 1) next.push({ name: '', regNo: '', gender: '' })
       return next
     })
   }
@@ -602,6 +606,11 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
     const value = key === 'regNo' ? e.target.value.toUpperCase() : e.target.value
     setMembers((prev) => prev.map((m, idx) => (idx === i ? { ...m, [key]: value } : m)))
     if (errors[errKey]) setErrors((er) => ({ ...er, [errKey]: '' }))
+  }
+
+  const setMemberGender = (i, gender) => {
+    setMembers((prev) => prev.map((m, idx) => (idx === i ? { ...m, gender } : m)))
+    if (errors[`m${i}gender`]) setErrors((er) => ({ ...er, [`m${i}gender`]: '' }))
   }
 
   const kind = steps[step]
@@ -640,6 +649,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
       phone: form.phone,
       course: form.course.trim(),
       residence: form.residence,
+      gender: form.gender,
       event: ev.isOther ? 'Other' : ev.name,
       otherEvent: ev.isOther ? form.otherEvent.trim() : '',
       eventId: ev.id,
@@ -648,7 +658,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
       extraValue: ev.extra ? form.extra.trim() : '',
       teamName: team ? form.teamName.trim() : '',
       teamSize: team ? form.size : 1,
-      members: team ? members.map((m) => ({ name: m.name.trim(), regNo: m.regNo.trim().toUpperCase() })) : [],
+      members: team ? members.map((m) => ({ name: m.name.trim(), regNo: m.regNo.trim().toUpperCase(), gender: m.gender })) : [],
     }
 
     setSending(true)
@@ -664,14 +674,15 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
         phone: payload.phone,
         course: payload.course,
         residence: payload.residence,
+        gender: payload.gender,
         extra_label: payload.extraLabel,
         extra_value: payload.extraValue,
         team_name: payload.teamName,
         team_size: payload.teamSize,
-        members: payload.members.map((m) => `${m.name} (${m.regNo})`).join('; '),
+        members: payload.members.map((m) => `${m.name} (${m.regNo}, ${m.gender})`).join('; '),
       })
       if (!error) {
-        writeLS(LS_PROFILE, { name: form.name, regNo: form.regNo, phone: form.phone, course: form.course, residence: form.residence })
+        writeLS(LS_PROFILE, { name: form.name, regNo: form.regNo, phone: form.phone, course: form.course, residence: form.residence, gender: form.gender })
         setDone(payload)
         onSuccess(ev.id)
       } else if (error.code === '23505') setServerError(`This registration number is already registered for ${ev.isOther ? 'this event' : ev.name}.`)
@@ -726,6 +737,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                   ['Registration no.', done.regNo],
                   ['Course', done.course],
                   ['Residence', done.residence],
+                  ['Gender', done.gender],
                   ...(done.teamName ? [['Team', `${done.teamName} (${done.teamSize})`]] : []),
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-4 px-5 py-3">
@@ -836,6 +848,28 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                     {errors.residence && <p role="alert" className="mt-2 text-sm text-red-400">{errors.residence}</p>}
                   </div>
 
+                  <div>
+                    <p className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Gender</p>
+                    <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label="Gender">
+                      {GENDERS.map((g, i) => (
+                        <button
+                          key={g}
+                          id={i === 0 ? 'f-gender' : undefined}
+                          type="button"
+                          role="radio"
+                          aria-checked={form.gender === g}
+                          onClick={() => set('gender', g)}
+                          className={`rounded-xl border px-4 py-3.5 text-sm font-semibold transition ${
+                            form.gender === g ? 'border-red-500 bg-red-500/15 text-white' : errors.gender ? 'border-red-500/70 text-white/60' : 'border-white/15 text-white/60 hover:border-red-400/60'
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.gender && <p role="alert" className="mt-2 text-sm text-red-400">{errors.gender}</p>}
+                  </div>
+
                   {ev.extra && (
                     <Field id="f-extra" label={ev.extra.label} error={errors.extra}>
                       <input id="f-extra" type="text" placeholder={ev.extra.placeholder} value={form.extra} onChange={onText('extra')} className={inputCls(errors.extra)} {...aria('extra')} />
@@ -888,6 +922,27 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                           <input id={`f-m${i}reg`} type="text" autoCapitalize="characters" value={m.regNo} onChange={setMember(i, 'regNo', `m${i}reg`)} className={`${inputCls(errors[`m${i}reg`])} uppercase`} {...aria(`m${i}reg`)} />
                         </Field>
                       </div>
+                      <div className="mt-4">
+                        <p className="mb-2 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Gender</p>
+                        <div className="grid grid-cols-3 gap-3" role="radiogroup" aria-label={`Member ${i + 2} gender`}>
+                          {GENDERS.map((g, gi) => (
+                            <button
+                              key={g}
+                              id={gi === 0 ? `f-m${i}gender` : undefined}
+                              type="button"
+                              role="radio"
+                              aria-checked={m.gender === g}
+                              onClick={() => setMemberGender(i, g)}
+                              className={`rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                                m.gender === g ? 'border-red-500 bg-red-500/15 text-white' : errors[`m${i}gender`] ? 'border-red-500/70 text-white/60' : 'border-white/15 text-white/60 hover:border-red-400/60'
+                              }`}
+                            >
+                              {g}
+                            </button>
+                          ))}
+                        </div>
+                        {errors[`m${i}gender`] && <p role="alert" className="mt-2 text-sm text-red-400">{errors[`m${i}gender`]}</p>}
+                      </div>
                     </div>
                   ))}
                 </>
@@ -907,6 +962,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                         ['Contact', form.phone],
                         ['Course', form.course],
                         ['Residence', form.residence],
+                        ['Gender', form.gender],
                         ...(ev.extra ? [[ev.extra.label, form.extra]] : []),
                         ...(ev.isOther ? [['Event', form.otherEvent]] : []),
                       ],
@@ -919,7 +975,7 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
                             rows: [
                               ['Team name', form.teamName],
                               ['Size', String(form.size)],
-                              ...members.map((m, i) => [`Member ${i + 2}`, `${m.name} · ${m.regNo.toUpperCase()}`]),
+                              ...members.map((m, i) => [`Member ${i + 2}`, `${m.name} · ${m.regNo.toUpperCase()} · ${m.gender}`]),
                             ],
                           },
                         ]
