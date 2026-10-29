@@ -7,7 +7,7 @@ import Footer from './Footer'
    true  = Team page is open
    false = anyone visiting /team (navbar click or typed URL) is sent to Home
 ------------------------------------------------------------------- */
-const TEAM_PAGE_OPEN = false
+const TEAM_PAGE_OPEN = true
 
 /* ------------------------------------------------------------------
    EDIT THIS SECTION ONLY.

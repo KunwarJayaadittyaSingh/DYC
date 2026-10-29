@@ -7,7 +7,7 @@ import Footer from './Footer'
    true  = Our Story page is open
    false = anyone visiting this page (navbar click or typed URL) is sent to Home
    ────────────────────────────────────────────────────────────── */
-const OURSTORY_PAGE_OPEN = false
+const OURSTORY_PAGE_OPEN = true
 
 /* ──────────────────────────────────────────────────────────────
    CONTENT — edit freely
