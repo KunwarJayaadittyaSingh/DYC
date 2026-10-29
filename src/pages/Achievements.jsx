@@ -7,7 +7,7 @@ import StarBackground from '../Components/StarBackground'
    true  = Achievements page is open
    false = anyone visiting this page (navbar click or typed URL) is sent to Home
 ------------------------------------------------------------------- */
-const ACHIEVEMENTS_PAGE_OPEN = true
+const ACHIEVEMENTS_PAGE_OPEN = false
 
 /* ------------------------------------------------------------------
    EDIT THIS SECTION ONLY.

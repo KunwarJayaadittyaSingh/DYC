@@ -8,7 +8,7 @@ import StarBackground from '../Components/StarBackground'
    true  = Sponsors page is open
    false = anyone visiting this page (navbar click or typed URL) is sent to Home
    ────────────────────────────────────────────────────────────── */
-const SPONSORS_PAGE_OPEN = true
+const SPONSORS_PAGE_OPEN = false
 
 /* ──────────────────────────────────────────────────────────────
    CONTENT — edit freely

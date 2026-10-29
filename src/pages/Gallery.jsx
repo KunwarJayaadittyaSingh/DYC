@@ -8,7 +8,7 @@ import Footer from './Footer'
    true  = Gallery page is open
    false = anyone visiting this page (navbar click or typed URL) is sent to Home
    ────────────────────────────────────────────────────────────── */
-const GALLERY_PAGE_OPEN = true
+const GALLERY_PAGE_OPEN = false
 
 /* ──────────────────────────────────────────────────────────────
    DATA — edit freely
