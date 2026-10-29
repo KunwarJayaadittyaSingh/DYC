@@ -1,28 +1,37 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import Locked from './pages/Locked'
+import { Link } from 'react-router-dom'
 
-import Home from './pages/Home'
-import OurStory from './pages/OurStory'
-import Team from './pages/Team'
-import Gallery from './pages/Gallery'
-import Achievements from './pages/Achievements'
-import Sponsers from './pages/Sponsers'
-// ...your other imports
-
-const App = () => (
-  <BrowserRouter>
-    <Routes>
-      <Route path="/" element={<Home />} />
-
-      <Route path="/about" element={<Locked name="about" label="Our Story"><OurStory /></Locked>} />
-      <Route path="/team" element={<Locked name="team" label="Team"><Team /></Locked>} />
-      <Route path="/gallery" element={<Locked name="gallery" label="Gallery"><Gallery /></Locked>} />
-      <Route path="/achievements" element={<Locked name="achievements" label="Achievements"><Achievements /></Locked>} />
-      <Route path="/sponsors" element={<Locked name="sponsors" label="Sponsors"><Sponsers /></Locked>} />
-
-      {/* ...your other routes */}
-    </Routes>
-  </BrowserRouter>
+const UnderConstruction = ({ page }) => (
+  <div
+    style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textAlign: 'center',
+      padding: '2rem',
+      gap: '1rem',
+    }}
+  >
+    <div style={{ fontSize: '4rem' }}>🚧</div>
+    <h1 style={{ margin: 0 }}>{page} is Under Construction</h1>
+    <p style={{ margin: 0, opacity: 0.7 }}>
+      We're working on this page. Please check back soon!
+    </p>
+    <Link
+      to="/"
+      style={{
+        marginTop: '1rem',
+        padding: '0.6rem 1.4rem',
+        borderRadius: '8px',
+        border: '1px solid currentColor',
+        textDecoration: 'none',
+        color: 'inherit',
+      }}
+    >
+      ← Back to Home
+    </Link>
+  </div>
 )
 
-export default App
+export default UnderConstruction
