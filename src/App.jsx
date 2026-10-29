@@ -1,51 +1,42 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
-import Navbar from './Components/Navbar'
-import EventsPopup from './Components/EventsPopup'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Locked from './pages/Locked'
+
 import Home from './pages/Home'
-import Magnitude from './pages/Magnitude'
-import MagnitudeRegister from './pages/MagnitudeRegister'
-import Youthvibe from './pages/Youthvibe'
-import Concoction from './pages/Concoction'
-import FTS from './pages/FTS'
-import TEDx from './pages/TEDx'
-import HultPrize from './pages/HultPrize'
-import ContactPage from './pages/ContactPage'
-import JoinUs from './pages/JoinUs'
 import OurStory from './pages/OurStory'
 import Team from './pages/Team'
-import Achievements from './pages/Achievements'
-import Sponsers from './pages/Sponsers'
 import Gallery from './pages/Gallery'
-import Help from './pages/Help'
-import Feedback from './pages/Feedback'
+import Achievements from './pages/Achievements'
+import Sponsors from './pages/Sponsors' // renamed from "Sponsers"
 
-const App = () => {
-  return (
-    <>
-      <Navbar />
-      <EventsPopup />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/magnitude" element={<Magnitude />} />
-        <Route path="/magnitude/register" element={<MagnitudeRegister />} />
-        <Route path="/youthvibe" element={<Youthvibe />} />
-        <Route path="/concoction" element={<Concoction />} />
-        <Route path="/fts" element={<FTS />} />
-        <Route path="/tedx" element={<TEDx />} />
-        <Route path="/hult-prize" element={<HultPrize />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/join" element={<JoinUs />} />
-        <Route path="/our-story" element={<OurStory />} />
-        <Route path="/team" element={<Team />} />
-        <Route path="/achievements" element={<Achievements />} />
-        <Route path="/sponsors" element={<Sponsers />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/help" element={<Help />} />
-        <Route path="/feedback" element={<Feedback />} />
-      </Routes>
-    </>
-  )
-}
+const lockedRoutes = [
+  { path: '/about', name: 'about', label: 'Our Story', Component: OurStory },
+  { path: '/team', name: 'team', label: 'Team', Component: Team },
+  { path: '/gallery', name: 'gallery', label: 'Gallery', Component: Gallery },
+  { path: '/achievements', name: 'achievements', label: 'Achievements', Component: Achievements },
+  { path: '/sponsors', name: 'sponsors', label: 'Sponsors', Component: Sponsors },
+]
+
+const App = () => (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home />} />
+
+      {lockedRoutes.map(({ path, name, label, Component }) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <Locked name={name} label={label}>
+              <Component />
+            </Locked>
+          }
+        />
+      ))}
+
+      {/* Redirect unknown URLs to home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  </BrowserRouter>
+)
 
 export default App
