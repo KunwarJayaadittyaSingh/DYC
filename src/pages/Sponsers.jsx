@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import Footer from './Footer'
 import StarBackground from '../Components/StarBackground'
+
+/* ──────────────────────────────────────────────────────────────
+   PAGE SWITCH
+   true  = Sponsors page is open
+   false = anyone visiting this page (navbar click or typed URL) is sent to Home
+   ────────────────────────────────────────────────────────────── */
+const SPONSORS_PAGE_OPEN = false
 
 /* ──────────────────────────────────────────────────────────────
    CONTENT — edit freely
@@ -716,7 +723,7 @@ const FinalCta = () => (
    PAGE
    ────────────────────────────────────────────────────────────── */
 
-const Sponsers = () => {
+const SponsersPage = () => {
   const reduced = usePrefersReducedMotion()
   const [pageProgress, setPageProgress] = useState(0)
 
@@ -818,6 +825,12 @@ const Sponsers = () => {
       `}</style>
     </div>
   )
+}
+
+// Gatekeeper: while SPONSORS_PAGE_OPEN is false, this page redirects to Home.
+const Sponsers = () => {
+  if (!SPONSORS_PAGE_OPEN) return <Navigate to="/" replace />
+  return <SponsersPage />
 }
 
 export default Sponsers

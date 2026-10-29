@@ -1,7 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import StarBackground from '../Components/StarBackground'
 import Footer from './Footer'
+
+/* ──────────────────────────────────────────────────────────────
+   PAGE SWITCH
+   true  = Gallery page is open
+   false = anyone visiting this page (navbar click or typed URL) is sent to Home
+   ────────────────────────────────────────────────────────────── */
+const GALLERY_PAGE_OPEN = false
 
 /* ──────────────────────────────────────────────────────────────
    DATA — edit freely
@@ -844,7 +851,7 @@ const Lightbox = ({ list, index, onClose, onGo, onSet }) => {
 /* ──────────────────────────────────────────────────────────────
    PAGE
    ────────────────────────────────────────────────────────────── */
-const Gallery = () => {
+const GalleryPage = () => {
   const [target, setTarget] = useState('All') // the pill the visitor just chose
   const [filter, setFilter] = useState('All') // what the grid is showing
   const [phase, setPhase] = useState('in') // grid fades out, swaps, fades back in
@@ -1153,6 +1160,12 @@ const Gallery = () => {
       `}</style>
     </div>
   )
+}
+
+// Gatekeeper: while GALLERY_PAGE_OPEN is false, this page redirects to Home.
+const Gallery = () => {
+  if (!GALLERY_PAGE_OPEN) return <Navigate to="/" replace />
+  return <GalleryPage />
 }
 
 export default Gallery
