@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import UnderConstruction from './UnderConstruction'
 import Footer from './Footer'
 
 /* ------------------------------------------------------------------
    PAGE SWITCH
    true  = Team page is open
-   false = anyone visiting /team (navbar click or typed URL) is sent to Home
+   false = page shows "Under Construction" (navbar click or typed URL)
 ------------------------------------------------------------------- */
-const TEAM_PAGE_OPEN = true
+const TEAM_PAGE_OPEN = false
 
 /* ------------------------------------------------------------------
    EDIT THIS SECTION ONLY.
@@ -753,9 +754,9 @@ const TeamPage = () => {
   )
 }
 
-// Gatekeeper: while TEAM_PAGE_OPEN is false, /team redirects to Home.
+// Gatekeeper: while TEAM_PAGE_OPEN is false, this page shows Under Construction.
 const Team = () => {
-  if (!TEAM_PAGE_OPEN) return <Navigate to="/" replace />
+  if (!TEAM_PAGE_OPEN) return <UnderConstruction page="Team" />
   return <TeamPage />
 }
 
