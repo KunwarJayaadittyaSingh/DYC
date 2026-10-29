@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
-import UnderConstruction from './UnderConstruction'
+import { Link, Navigate } from 'react-router-dom'
 import StarBackground from '../Components/StarBackground'
-import Footer from './Footer'
 
 /* ------------------------------------------------------------------
    PAGE SWITCH
    true  = Achievements page is open
-   false = page shows "Under Construction" (navbar click or typed URL)
+   false = anyone visiting this page (navbar click or typed URL) is sent to Home
 ------------------------------------------------------------------- */
-const ACHIEVEMENTS_PAGE_OPEN = false
+const ACHIEVEMENTS_PAGE_OPEN = true
 
 /* ------------------------------------------------------------------
    EDIT THIS SECTION ONLY.
@@ -1604,18 +1602,14 @@ const AchievementsPage = () => {
         </section>
       </div>
 
-      <div className="relative z-10">
-        <Footer />
-      </div>
-
       <Lightbox state={lightbox} onClose={closeLightbox} onStep={stepLightbox} onGo={goLightbox} />
     </main>
   )
 }
 
-// Gatekeeper: while ACHIEVEMENTS_PAGE_OPEN is false, this page shows Under Construction.
+// Gatekeeper: while ACHIEVEMENTS_PAGE_OPEN is false, this page redirects to Home.
 const Achievements = () => {
-  if (!ACHIEVEMENTS_PAGE_OPEN) return <UnderConstruction page="Achievements" />
+  if (!ACHIEVEMENTS_PAGE_OPEN) return <Navigate to="/" replace />
   return <AchievementsPage />
 }
 
