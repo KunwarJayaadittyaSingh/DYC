@@ -11,6 +11,8 @@ const UnderConstruction = ({ page }) => (
       textAlign: 'center',
       padding: '2rem',
       gap: '1rem',
+      background: '#070606',
+      color: '#fff',
     }}
   >
     <div style={{ fontSize: '4rem' }}>🚧</div>
