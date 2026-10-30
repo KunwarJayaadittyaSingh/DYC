@@ -34,8 +34,8 @@ const EVENT_ASSETS = {
     image: '/images/magnitude/events/paridhan.jpg',
     rulebook: '',
   },
-  'frame-focus': {
-    image: '/images/magnitude/events/frame-focus.jpg',
+  'free-fire': {
+    image: '/images/magnitude/events/free-fire.jpg',
     rulebook: '',
   },
   'open-mic': {
@@ -89,29 +89,54 @@ const EVENT_ASSETS = {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   EVENTS + REGISTRATION CONTROLS — edit freely
+   ★ OPEN / CLOSE EACH EVENT HERE ★     true = open, false = closed
    ──────────────────────────────────────────────────────────────
 
   HOW TO OPEN / CLOSE REGISTRATIONS (three levels)
 
   1. WHOLE PAGE  → data/registrations.js, exactly as before.
-                   (opensAt / closesAt on the '/magnitude' entry, or whatever
-                   switch getStatus() already reads: 'open' | 'closed' | 'upcoming')
+                   (If the whole page is closed, every event is closed
+                   no matter what you set below.)
 
-  2. ONE EVENT   → set `open: false` on that event below.
-                   The card shows "Registration closed" and nobody can sign up.
+  2. ONE EVENT   → change its line in EVENT_OPEN below to true or false.
+                   false = card shows "Registration closed" and nobody can sign up.
 
-  3. SCHEDULE ONE EVENT → add opensAt / closesAt (ISO with timezone), e.g.
+  3. SCHEDULE ONE EVENT → add opensAt / closesAt (ISO with timezone) to that
+                   event in BASE_EVENTS, e.g.
                    opensAt: '2026-10-28T10:00:00+05:30'
 
   A closed event is still visible on the page, with a locked button.
+  An event missing from this list stays open.
+*/
+
+const EVENT_OPEN = {
+  'paridhan': true,
+  'open-mic': true,
+  'spike-showdown': true,
+  'bgmi': true,
+  'free-fire': true,
+  'kitchen-king': true,
+  'arm-face-off': true,
+  'rush-to-roadies': true,
+  'brushstroke': true,
+  'mehandi-art': true,
+  'poetry-slam': true,
+  'first-act': true,
+  'news-debate': true,
+  'other': true,
+}
+
+/* ──────────────────────────────────────────────────────────────
+   EVENTS — edit freely
+   ──────────────────────────────────────────────────────────────
 
   FIELDS
   group    : filter chip it belongs to
   category : red label on the card
   min/max  : team size. min = max = 1 → Solo
   extra    : optional extra field asked from the team leader
-  (image and rulebook are set in EVENT_ASSETS above)
+  (image and rulebook are set in EVENT_ASSETS above,
+   open/closed is set in EVENT_OPEN above)
 */
 
 const EVENT_DATE = '28 OCT - 4 NOV 26'
@@ -121,8 +146,8 @@ const BASE_EVENTS = [
   { id: 'paridhan', name: 'Paridhan', group: 'Lifestyle', category: 'Lifestyle (Group Fashion)', desc: 'A group fashion showcase featuring coordinated themes, creativity, and style synchronization.', min: 8, max: 15 },
   //{ id: 'frame-focus', name: 'Frame & Focus', group: 'Media & Production', category: 'Media & Production (Photography)', desc: 'A photography contest based on a given theme testing creativity and composition.', min: 1, max: 1 },
   { id: 'open-mic', name: 'Open Mic', group: 'Literary & Theatre', category: 'Literary & Theatre', desc: 'A platform for storytelling, poetry, and stand-up performances celebrating creativity and expression.', min: 1, max: 1 },
-  { id: 'spike-showdown', name: 'Spike Showdown (Valorant)', group: 'eSports', category: 'eSports', desc: 'A thrilling Valorant 5v5 tournament testing strategy, teamwork, and reflexes.', max: 5, extra: { label: 'Riot ID', placeholder: 'Name#TAG' } },
-  { id: 'bgmi', name: 'Battleground Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive BGMI tournament where squads battle for glory.', max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
+  { id: 'spike-showdown', name: 'Spike Showdown (Valorant)', group: 'eSports', category: 'eSports', desc: 'A thrilling Valorant 5v5 tournament testing strategy, teamwork, and reflexes.', min: 5, max: 5, extra: { label: 'Riot ID', placeholder: 'Name#TAG' } },
+  { id: 'bgmi', name: 'Battleground Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive BGMI tournament where squads battle for glory.', min: 4, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
   { id: 'free-fire', name: 'Free Fire Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive Free fire tournament where squads battle for glory.', min: 1, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
   { id: 'kitchen-king', name: "LPU's Kitchen King", group: 'Management', category: 'Management (Cooking)', desc: 'A live cooking contest testing culinary skills, creativity, and presentation.', min: 1, max: 2 },
   { id: 'arm-face-off', name: 'Arm Face-Off', group: 'Sports', category: 'Sports', desc: 'An arm wrestling competition focusing on strength and endurance.', min: 1, max: 1 },
@@ -138,9 +163,10 @@ const BASE_EVENTS = [
   { id: 'other', name: 'Something else?', group: 'Other', category: 'Open Slot', isOther: true, desc: 'Have a talent that is not on the list? Tell us what you would like to perform and we will get in touch.', min: 1, max: 1 },
 ]
 
-// Joins each event with its image + rulebook from EVENT_ASSETS above.
+// Joins each event with its open/closed switch, image and rulebook.
 const MAGNITUDE_EVENTS = BASE_EVENTS.map((e) => ({
   ...e,
+  open: EVENT_OPEN[e.id] ?? true,
   image: EVENT_ASSETS[e.id]?.image || '',
   rulebook: EVENT_ASSETS[e.id]?.rulebook || '',
 }))
@@ -168,7 +194,7 @@ const RESIDENCE = ['Day Scholar', 'Hosteller']
 const GENDERS = ['Male', 'Female', 'Other']
 const COURSES = [
   'B.Tech', 'M.Tech', 'BCA', 'MCA', 'BBA', 'MBA', 'B.Com', 'M.Com',
-  'BA', 'MA', 'B.Sc', 'M.Sc', 'B.Des', 'LLB', 'Diploma',
+  'BA', 'MA', 'B.Sc', 'M.Sc', 'B.Des', 'LLB', 'Diploma', 'PhD', 'Other',
 ]
 const REG_RE = /^[A-Za-z0-9/-]{4,20}$/
 // ── TEST MODE: true = never show "Registered ✓", button always reopens (set false before going live)
