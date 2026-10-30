@@ -114,7 +114,7 @@ const EVENT_ASSETS = {
   (image and rulebook are set in EVENT_ASSETS above)
 */
 
-const EVENT_DATE = '28 OCT - 4 NOV 25'
+const EVENT_DATE = '28 OCT - 4 NOV 26'
 const PRIZE = 'Trophies & Certificates'
 
 const BASE_EVENTS = [
