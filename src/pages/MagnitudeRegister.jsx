@@ -70,8 +70,8 @@ const EVENT_ASSETS = {
     image: '/images/magnitude/events/mehandi-art.jpg',
     rulebook: '',
   },
-  'startup-spotlight': {
-    image: '/images/magnitude/events/startup-spotlight.jpg',
+  'voice of-magnitude': {
+    image: '/images/magnitude/events/voice-of-magnitude.jpg',
     rulebook: '',
   },
   'poetry-slam': {
@@ -86,6 +86,14 @@ const EVENT_ASSETS = {
     image: '/images/magnitude/events/news-debate.jpg',
     rulebook: '',
   },
+  'step-sync': {
+    image: '/images/magnitude/events/step-sync.jpg',
+    rulebook: '',
+  },
+  'dance-crew-showcase': {
+    image: '/images/magnitude/events/dance-crew-showcase.jpg',
+    rulebook: '',
+  }
 }
 
 /* ──────────────────────────────────────────────────────────────
@@ -123,6 +131,9 @@ const EVENT_OPEN = {
   'poetry-slam': true,
   'first-act': true,
   'news-debate': true,
+  'step-sync': true,
+  'voice of-magnitude': true,
+  'dance-crew-showcase': true,
   'other': true,
 }
 
@@ -146,9 +157,12 @@ const BASE_EVENTS = [
   { id: 'paridhan', name: 'Paridhan', group: 'Lifestyle', category: 'Lifestyle (Group Fashion)', desc: 'A group fashion showcase featuring coordinated themes, creativity, and style synchronization.', min: 8, max: 15 },
   //{ id: 'frame-focus', name: 'Frame & Focus', group: 'Media & Production', category: 'Media & Production (Photography)', desc: 'A photography contest based on a given theme testing creativity and composition.', min: 1, max: 1 },
   { id: 'open-mic', name: 'Open Mic', group: 'Literary & Theatre', category: 'Literary & Theatre', desc: 'A platform for storytelling, poetry, and stand-up performances celebrating creativity and expression.', min: 1, max: 1 },
+  { id: 'step-sync', name: 'Step Sync', group: 'Lifestyle', category: 'Lifestyle (Dance)', desc: 'A dance competition where teams perform synchronized routines to showcase rhythm, coordination, and creativity.', min: 4, max: 8 },
+  { id: 'voice of-magnitude', name: 'Voice of Magnitude', group: 'Lifestyle', category: 'Lifestyle (Singing)', desc: 'A singing competition where participants showcase their vocal talent and musicality.', min: 1, max: 1 },
+  { id: 'dance-crew-showcase', name: 'Dance Crew Showcase', group: 'Lifestyle', category: 'Lifestyle (Dance)', desc: 'A dance competition where teams perform synchronized routines to showcase rhythm, coordination, and creativity.', min: 4, max: 8 },
   { id: 'spike-showdown', name: 'Spike Showdown (Valorant)', group: 'eSports', category: 'eSports', desc: 'A thrilling Valorant 5v5 tournament testing strategy, teamwork, and reflexes.', min: 5, max: 5, extra: { label: 'Riot ID', placeholder: 'Name#TAG' } },
   { id: 'bgmi', name: 'Battleground Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive BGMI tournament where squads battle for glory.', min: 4, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
-  { id: 'free-fire', name: 'Free Fire Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive Free fire tournament where squads battle for glory.', min: 1, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
+  { id: 'free-fire', name: 'Free Fire Magnitude Series', group: 'eSports', category: 'eSports', desc: 'A competitive Free fire tournament where squads battle for glory.', min: 1, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
   { id: 'kitchen-king', name: "LPU's Kitchen King", group: 'Management', category: 'Management (Cooking)', desc: 'A live cooking contest testing culinary skills, creativity, and presentation.', min: 1, max: 2 },
   { id: 'arm-face-off', name: 'Arm Face-Off', group: 'Sports', category: 'Sports', desc: 'An arm wrestling competition focusing on strength and endurance.', min: 1, max: 1 },
   { id: 'rush-to-roadies', name: 'Rush to Roadies', group: 'Sports', category: 'Sports (Fitness)', desc: 'An obstacle-based fitness challenge testing agility, stamina, and determination.', min: 1, max: 1 },
