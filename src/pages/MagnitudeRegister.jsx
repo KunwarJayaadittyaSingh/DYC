@@ -102,7 +102,7 @@ const EVENT_ASSETS = {
     image: '/images/magnitude/events/group-choir-ensemble-showcase.jpg',
     rulebook: '',
   },
-  'nukkad natak': {
+  'nukkad-natak': {
     image: '/images/magnitude/events/nukkad-natak.jpg',
     rulebook: '',
   }
@@ -150,7 +150,7 @@ const EVENT_OPEN = {
   'mag gala': true,
   'one act play': true,
   'group choir & ensemble showcase': true,
-  'nukkad natak': true,
+  'nukkad-natak': true,
   'other': true,
 }
 
