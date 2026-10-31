@@ -54,16 +54,8 @@ const EVENT_ASSETS = {
     image: '/images/magnitude/events/kitchen-king.jpg',
     rulebook: '',
   },
-  'arm-face-off': {
-    image: '/images/magnitude/events/arm-face-off.jpg',
-    rulebook: '',
-  },
   'rush-to-roadies': {
     image: '/images/magnitude/events/rush-to-roadies.jpg',
-    rulebook: '',
-  },
-  'brushstroke': {
-    image: '/images/magnitude/events/brushstroke.jpg',
     rulebook: '',
   },
   'mehandi-art': {
@@ -92,6 +84,26 @@ const EVENT_ASSETS = {
   },
   'dance-crew-showcase': {
     image: '/images/magnitude/events/dance-crew-showcase.jpg',
+    rulebook: '',
+  },
+  'soundscape': {
+    image: '/images/magnitude/events/soundscape.jpg',
+    rulebook: '',
+  },
+  'mag gala': {
+    image: '/images/magnitude/events/mag-gala.jpg',
+    rulebook: '',
+  },
+  'one act play': {
+    image: '/images/magnitude/events/one-act-play.jpg',
+    rulebook: '',
+  },
+  'group choir & ensemble showcase': {
+    image: '/images/magnitude/events/group-choir-ensemble-showcase.jpg',
+    rulebook: '',
+  },
+  'nukkad natak': {
+    image: '/images/magnitude/events/nukkad-natak.jpg',
     rulebook: '',
   }
 }
@@ -134,6 +146,11 @@ const EVENT_OPEN = {
   'step-sync': true,
   'voice of-magnitude': true,
   'dance-crew-showcase': true,
+  'soundscape': true,
+  'mag gala': true,
+  'one act play': true,
+  'group choir & ensemble showcase': true,
+  'nukkad natak': true,
   'other': true,
 }
 
@@ -155,22 +172,26 @@ const PRIZE = 'Trophies & Certificates'
 
 const BASE_EVENTS = [
   { id: 'paridhan', name: 'Paridhan', group: 'Lifestyle', category: 'Lifestyle (Group Fashion)', desc: 'A group fashion showcase featuring coordinated themes, creativity, and style synchronization.', min: 8, max: 15 },
+  { id: 'mag gala', name: 'Magnitude Gala', group: 'Lifestyle', category: 'Lifestyle (Fashion Show)', desc: 'A glamorous fashion show where participants showcase their style, confidence, and stage presence.', min: 1, max: 1 },
   //{ id: 'frame-focus', name: 'Frame & Focus', group: 'Media & Production', category: 'Media & Production (Photography)', desc: 'A photography contest based on a given theme testing creativity and composition.', min: 1, max: 1 },
   { id: 'open-mic', name: 'Open Mic', group: 'Literary & Theatre', category: 'Literary & Theatre', desc: 'A platform for storytelling, poetry, and stand-up performances celebrating creativity and expression.', min: 1, max: 1 },
+  { id: 'Nukkad Natak', name: 'Nukkad Natak', group: 'Literary & Theatre', category: 'Literary & Theatre (Street Play)', desc: 'A street play competition where teams perform socially relevant skits with impactful messages.', min: 4, max: 8 },
   { id: 'step-sync', name: 'Step Sync', group: 'Lifestyle', category: 'Lifestyle (Dance)', desc: 'A dance competition where teams perform synchronized routines to showcase rhythm, coordination, and creativity.', min: 4, max: 8 },
   { id: 'voice of-magnitude', name: 'Voice of Magnitude', group: 'Lifestyle', category: 'Lifestyle (Singing)', desc: 'A singing competition where participants showcase their vocal talent and musicality.', min: 1, max: 1 },
+  { id: 'soundscape', name: 'Soundscape (Instrumental)', group: 'Lifestyle', category: 'Lifestyle (Music)', desc: 'A music competition where participants create and perform original compositions or arrangements.', min: 1, max: 1 },
   { id: 'dance-crew-showcase', name: 'Dance Crew Showcase', group: 'Lifestyle', category: 'Lifestyle (Dance)', desc: 'A dance competition where teams perform synchronized routines to showcase rhythm, coordination, and creativity.', min: 4, max: 8 },
   { id: 'spike-showdown', name: 'Spike Showdown (Valorant)', group: 'eSports', category: 'eSports', desc: 'A thrilling Valorant 5v5 tournament testing strategy, teamwork, and reflexes.', min: 5, max: 5, extra: { label: 'Riot ID', placeholder: 'Name#TAG' } },
   { id: 'bgmi', name: 'Battleground Magnitude Series (BGMI)', group: 'eSports', category: 'eSports', desc: 'A competitive BGMI tournament where squads battle for glory.', min: 4, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
   { id: 'free-fire', name: 'Free Fire Magnitude Series', group: 'eSports', category: 'eSports', desc: 'A competitive Free fire tournament where squads battle for glory.', min: 1, max: 4, extra: { label: 'BGMI Character ID', placeholder: 'e.g. 5123456789' } },
   { id: 'kitchen-king', name: "LPU's Kitchen King", group: 'Management', category: 'Management (Cooking)', desc: 'A live cooking contest testing culinary skills, creativity, and presentation.', min: 1, max: 2 },
-  { id: 'arm-face-off', name: 'Arm Face-Off', group: 'Sports', category: 'Sports', desc: 'An arm wrestling competition focusing on strength and endurance.', min: 1, max: 1 },
+  //{ id: 'arm-face-off', name: 'Arm Face-Off', group: 'Sports', category: 'Sports', desc: 'An arm wrestling competition focusing on strength and endurance.', min: 1, max: 1 },
   { id: 'rush-to-roadies', name: 'Rush to Roadies', group: 'Sports', category: 'Sports (Fitness)', desc: 'An obstacle-based fitness challenge testing agility, stamina, and determination.', min: 1, max: 1 },
-  { id: 'brushstroke', name: 'Brushstroke', group: 'Fine Arts', category: 'Fine Arts', desc: "A live drawing competition based on the theme 'Nature's Splendor'.", min: 1, max: 1 },
-  { id: 'mehandi-art', name: 'Mehandi Art', group: 'Fine Arts', category: 'Fine Arts', desc: 'A traditional Mehandi competition celebrating artistry and precision in design.', min: 1, max: 1 },
+  { id: 'group choir & ensemble showcase', name: 'Group Choir & Ensemble Showcase', group: 'Lifestyle', category: 'Lifestyle (Music)', desc: 'A music competition where groups perform vocal or instrumental pieces in harmony.', min: 4, max: 8 },
+  //{ id: 'brushstroke', name: 'Brushstroke', group: 'Fine Arts', category: 'Fine Arts', desc: "A live drawing competition based on the theme 'Nature's Splendor'.", min: 1, max: 1 },
+  //{ id: 'mehandi-art', name: 'Mehandi Art', group: 'Fine Arts', category: 'Fine Arts', desc: 'A traditional Mehandi competition celebrating artistry and precision in design.', min: 1, max: 1 },
   //{ id: 'startup-spotlight', name: 'Startup Spotlight', group: 'Entrepreneurship', category: 'Entrepreneurship', desc: 'A startup pitch competition where participants present innovative business ideas.', min: 1, max: 5 },
   { id: 'poetry-slam', name: 'Poetry Slam', group: 'Literary & Theatre', category: 'Literary', desc: 'A poetry performance competition where participants express emotions through powerful verses.', min: 1, max: 1 },
-  { id: 'first-act', name: 'The First Act', group: 'Literary & Theatre', category: 'Theatre', desc: 'A one-act play competition testing acting, storytelling, and stage performance.', min: 1, max: 1 },
+  { id: 'one act play', name: 'One Act Play', group: 'Literary & Theatre', category: 'Theatre', desc: 'A one-act play competition testing acting, storytelling, and stage performance.', min: 1, max: 1 },
   { id: 'news-debate', name: 'The News Debate', group: 'Literary & Theatre', category: 'Literary', desc: 'A debate competition where participants discuss contemporary issues with logic and confidence.', min: 1, max: 1 },
 
   // Catch-all slot (keeps the old "Other" option from your form).
