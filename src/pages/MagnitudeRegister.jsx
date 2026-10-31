@@ -105,6 +105,10 @@ const EVENT_ASSETS = {
   'nukkad-natak': {
     image: '/images/magnitude/events/nukkad-natak.jpg',
     rulebook: '',
+  },
+  'other': {
+    image: '/images/magnitude/events/other.jpg',
+    rulebook: '',
   }
 }
 
@@ -233,7 +237,7 @@ const COURSES = [
 ]
 const REG_RE = /^[A-Za-z0-9/-]{4,20}$/
 // ── TEST MODE: true = never show "Registered ✓", button always reopens (set false before going live)
-const TEST_MODE = true
+const TEST_MODE = false
 
 const getRulebook = (ev) => (ev.rulebook || '').trim()
 
@@ -484,7 +488,7 @@ const STATUS_PILL = {
   upcoming: ['SOON', 'bg-yellow-400 text-black'],
 }
 
-const EventCard = ({ ev, status, registered, onRegister }) => {
+const EventCard = ({ ev, status, registered, onRegister, onClosed }) => {
   const [label, pillCls] = STATUS_PILL[status]
   const rulebook = getRulebook(ev)
   return (
@@ -538,9 +542,13 @@ const EventCard = ({ ev, status, registered, onRegister }) => {
               Opens soon
             </div>
           ) : (
-            <div className="w-full rounded-full border border-white/10 bg-white/3 py-3.5 text-center text-xs font-bold uppercase tracking-[0.16em] text-white/40">
+            <button
+              type="button"
+              onClick={() => onClosed(ev)}
+              className="w-full rounded-full border border-white/10 bg-white/3 py-3.5 text-center text-xs font-bold uppercase tracking-[0.16em] text-white/40 transition hover:border-red-500/40 hover:text-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
               Registration closed 🔒
-            </div>
+            </button>
           )}
 
           {!ev.isOther &&
@@ -1138,6 +1146,63 @@ const RegisterModal = ({ ev, onClose, onSuccess, onServerClosed }) => {
 }
 
 /* ──────────────────────────────────────────────────────────────
+   CLOSED POPUP — shown when someone taps a closed event
+   ────────────────────────────────────────────────────────────── */
+
+const ClosedModal = ({ ev, onClose }) => {
+  const btnRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
+  useEffect(() => {
+    const previous = document.activeElement
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    btnRef.current?.focus()
+    const onKey = (e) => {
+      if (e.key === 'Escape') onCloseRef.current()
+      else if (e.key === 'Tab') e.preventDefault() // single button: keep focus inside the popup
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+      previous?.focus?.()
+    }
+  }, [])
+
+  const label = ev.isOther ? 'this slot' : ev.name
+
+  return (
+    <div className="fixed inset-0 z-100 flex items-center justify-center p-6" role="alertdialog" aria-modal="true" aria-labelledby="closed-title" aria-describedby="closed-desc">
+      <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={onClose} />
+      <div
+        className="modal-pop relative w-full max-w-md rounded-3xl border border-red-500/40 bg-red-950/70 px-8 py-10 text-center"
+        style={{ boxShadow: '0 40px 120px rgba(239,68,68,0.28)' }}
+      >
+        <svg className="mx-auto h-16 w-16 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" aria-hidden="true">
+          <path d="M5 5l14 14M19 5L5 19" />
+        </svg>
+        <h2 id="closed-title" className="font-display mt-6 text-3xl uppercase tracking-[-0.02em] text-red-300">
+          Registration closed
+        </h2>
+        <p id="closed-desc" className="mt-4 leading-relaxed text-gray-300">
+          Registration for <span className="font-semibold text-white">{label}</span> has been closed. Please check back later or contact the organizers for more information.
+        </p>
+        <button
+          ref={btnRef}
+          type="button"
+          onClick={onClose}
+          className="mt-8 rounded-full bg-red-500 px-8 py-3.5 text-xs font-bold uppercase tracking-[0.16em] text-black transition hover:bg-red-400 hover:shadow-[0_0_40px_rgba(239,68,68,0.5)] focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          Got it
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/* ──────────────────────────────────────────────────────────────
    PAGE
    ────────────────────────────────────────────────────────────── */
 
@@ -1146,6 +1211,7 @@ export default function MagnitudeRegister() {
   const [group, setGroup] = useState('all')
   const [mode, setMode] = useState('all') // all | solo | team
   const [active, setActive] = useState(null)
+  const [closedEv, setClosedEv] = useState(null)
   const [done, setDone] = useState(() => readLS(LS_DONE, []))
   const [serverClosed, setServerClosed] = useState(false)
   const [, force] = useState(0)
@@ -1291,12 +1357,14 @@ export default function MagnitudeRegister() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((ev, i) => (
               <Reveal key={ev.id} delay={Math.min(i, 5) * 70} className="h-full">
-                <EventCard ev={ev} status={statusOf(ev)} registered={TEST_MODE ? false : done.includes(ev.id)} onRegister={setActive} />
+                <EventCard ev={ev} status={statusOf(ev)} registered={TEST_MODE ? false : done.includes(ev.id)} onRegister={setActive} onClosed={setClosedEv} />
               </Reveal>
             ))}
           </div>
         )}
       </main>
+
+      {closedEv && <ClosedModal ev={closedEv} onClose={() => setClosedEv(null)} />}
 
       {active && (
         <RegisterModal key={active.id} ev={active} onClose={() => setActive(null)} onSuccess={handleSuccess} onServerClosed={() => setServerClosed(true)} />
