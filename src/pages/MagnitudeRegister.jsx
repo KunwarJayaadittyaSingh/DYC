@@ -171,7 +171,7 @@ const EVENT_OPEN = {
    open/closed is set in EVENT_OPEN above)
 */
 
-const EVENT_DATE = '28 OCT - 4 NOV 26'
+const EVENT_DATE = '31 OCT - 15 NOV 26'
 const PRIZE = 'Trophies & Certificates'
 
 const BASE_EVENTS = [
