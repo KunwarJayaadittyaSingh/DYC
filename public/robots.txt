@@ -6,3 +6,4 @@ Allow: /favicon.ico
 Allow: /og-image.jpg
 
 Sitemap: https://youthvibelpu.com/sitemap.xml
+
