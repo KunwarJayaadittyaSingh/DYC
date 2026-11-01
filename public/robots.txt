@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /favicon.png
+Allow: /apple-touch-icon.png
+Allow: /favicon.ico
+Allow: /og-image.jpg
+
+Sitemap: https://youthvibelpu.com/sitemap.xml

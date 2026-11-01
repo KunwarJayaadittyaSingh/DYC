@@ -10,7 +10,7 @@ import { getRegistrationLink, MAGNITUDE_FORM } from '../data/registrations'
    the home page (it lives in EventPage), so this section is fully
    transparent and adds no background of its own.
    ────────────────────────────────────────────────────────────── */
-const EDITION = '25' // shows as "Magnitude 25"
+const EDITION = '26' // shows as "Magnitude 26"
 const ABOUT_IMAGE = '' // optional, e.g. '/images/magnitude-7.jpg'. Leave '' to hide.
 const STATS = [
   { value: 3, suffix: '', label: 'Days of innovation' },
