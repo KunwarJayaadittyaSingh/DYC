@@ -1,56 +1,49 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef } from "react";
+import useScrollLinked from "../hooks/useScrollLinked";
+import LazyVideo from "./LazyVideo";
+
+const clamp = (v) => Math.min(Math.max(v, 0), 1);
 
 const CinematicHero = ({ videoSrc, heroWord, belowText }) => {
   const sectionRef = useRef(null);
-  const [progress, setProgress] = useState(0);
+  const videoWrapRef = useRef(null);
+  const heroWordRef = useRef(null);
+  const belowTextRef = useRef(null);
 
-  useEffect(() => {
-    let ticking = false;
+  // Scroll animation: writes styles straight to the elements (no React re-render)
+  useScrollLinked(sectionRef, (rect) => {
+    const progress = clamp(-rect.top / (rect.height * 0.8));
 
-    const update = () => {
-      if (!sectionRef.current) return;
+    // Video animation
+    const videoScale = 1 - progress * 0.35;
+    const videoSkew = progress * 6;
+    const videoOpacityFade = 1 - progress * 0.15;
 
-      const rect = sectionRef.current.getBoundingClientRect();
+    // Main hero word animation
+    const heroWordOpacity = 1 - Math.min(progress * 2.2, 1);
+    const heroWordY = progress * -60;
 
-      const raw = -rect.top / (rect.height * 0.8);
+    // Bottom text animation
+    const belowTextOpacity = Math.min(progress * 2, 1);
+    const belowTextY = (1 - Math.min(progress * 2, 1)) * 60;
+    const belowTextBlur = (1 - Math.min(progress * 2, 1)) * 8;
 
-      setProgress(Math.min(Math.max(raw, 0), 1));
+    if (videoWrapRef.current) {
+      videoWrapRef.current.style.transform = `perspective(1200px) scale(${videoScale}) rotateX(${videoSkew}deg)`;
+      videoWrapRef.current.style.opacity = videoOpacityFade;
+    }
 
-      ticking = false;
-    };
+    if (heroWordRef.current) {
+      heroWordRef.current.style.opacity = heroWordOpacity;
+      heroWordRef.current.style.transform = `translate3d(0, ${heroWordY}px, 0)`;
+    }
 
-    const onScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(update);
-        ticking = true;
-      }
-    };
-
-    window.addEventListener("scroll", onScroll);
-
-    update();
-
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
-  // Video animation
-  const videoScale = 1 - progress * 0.35;
-  const videoSkew = progress * 6;
-  const videoOpacityFade = 1 - progress * 0.15;
-
-  // Main hero word animation
-  const heroWordOpacity = 1 - Math.min(progress * 2.2, 1);
-  const heroWordY = progress * -60;
-
-  // Bottom text animation
-  const belowTextOpacity = Math.min(progress * 2, 1);
-  const belowTextY =
-    (1 - Math.min(progress * 2, 1)) * 60;
-
-  const belowTextBlur =
-    (1 - Math.min(progress * 2, 1)) * 8;
+    if (belowTextRef.current) {
+      belowTextRef.current.style.opacity = belowTextOpacity;
+      belowTextRef.current.style.transform = `translate3d(0, ${belowTextY}px, 0)`;
+      belowTextRef.current.style.filter = `blur(${belowTextBlur}px)`;
+    }
+  });
 
   return (
     <section
@@ -61,42 +54,30 @@ const CinematicHero = ({ videoSrc, heroWord, belowText }) => {
 
         {/* Background Video */}
         <div
-          className="absolute inset-0 flex items-center justify-center"
-          style={{
-            transform: `scale(${videoScale}) perspective(1200px) rotateX(${videoSkew}deg)`,
-            opacity: videoOpacityFade,
-            transformOrigin: "center top",
-          }}
+          ref={videoWrapRef}
+          className="absolute inset-0 flex items-center justify-center will-change-transform"
+          style={{ transformOrigin: "center top" }}
         >
-          <video
+          <LazyVideo
+            eager
             src={videoSrc}
             className="h-full w-full object-cover"
-            autoPlay
-            loop
-            muted
-            playsInline
           />
         </div>
 
         {/* Main Hero Word */}
         <h1
-          className="pointer-events-none absolute inset-0 flex items-center justify-center text-[18vw] font-black uppercase text-white mix-blend-difference"
-          style={{
-            opacity: heroWordOpacity,
-            transform: `translateY(${heroWordY}px)`,
-          }}
+          ref={heroWordRef}
+          className="pointer-events-none absolute inset-0 flex items-center justify-center text-[18vw] font-black uppercase text-white mix-blend-difference will-change-transform"
         >
           {heroWord}
         </h1>
 
         {/* Bottom Text */}
         <div
-          className="pointer-events-none absolute bottom-[12%] left-0 right-0 z-10 flex justify-center px-6"
-          style={{
-            opacity: belowTextOpacity,
-            transform: `translateY(${belowTextY}px)`,
-            filter: `blur(${belowTextBlur}px)`,
-          }}
+          ref={belowTextRef}
+          className="pointer-events-none absolute bottom-[12%] left-0 right-0 z-10 flex justify-center px-6 will-change-transform"
+          style={{ opacity: 0 }}
         >
           <h2 className="text-center text-[7vw] font-sans font-bold uppercase leading-[0.95] text-white md:text-[3.5vw]">
             {belowText}

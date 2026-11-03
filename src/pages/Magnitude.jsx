@@ -434,6 +434,8 @@ const Tile = ({ src, n, total, aspect, hidden, onOpen }) => {
         <img
           src={src}
           alt=""
+          loading="lazy"
+          decoding="async"
           draggable="false"
           className="h-full w-full object-cover object-[50%_28%] transition duration-700 ease-out group-hover:scale-[1.07] group-hover:brightness-110"
         />
@@ -679,7 +681,6 @@ const MagnitudeGallery = ({ link }) => {
    ────────────────────────────────────────────────────────────── */
 const MagStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
     .mag-display { font-family: 'Anton', 'Impact', 'Arial Narrow Bold', sans-serif; letter-spacing: -0.01em; }
 
     .mag-num {
@@ -1029,7 +1030,6 @@ const RegistrationCTA = ({
 
 const RegStyles = () => (
   <style>{`
-    @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
     .reg-display { font-family: 'Anton', 'Impact', 'Arial Narrow Bold', sans-serif; letter-spacing: -0.01em; }
 
     /* headline: last line is an outline that floods red letter by letter on hover */

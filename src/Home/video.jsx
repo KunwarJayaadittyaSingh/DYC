@@ -6,10 +6,24 @@ const Video = () => {
   const videoRef = useRef(null)
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true
-      videoRef.current.play().catch(err => console.log("Autoplay blocked:", err))
-    }
+    const video = videoRef.current
+    if (!video) return
+
+    video.muted = true
+    video.play().catch((err) => console.log('Autoplay blocked:', err))
+
+    // Pause when the hero is off screen, resume when it comes back.
+    // Saves CPU/GPU/battery while the user scrolls through the rest of the page.
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) video.play().catch(() => {})
+        else video.pause()
+      },
+      { threshold: 0.05 }
+    )
+    io.observe(video)
+
+    return () => io.disconnect()
   }, [])
 
   return (
@@ -21,6 +35,9 @@ const Video = () => {
         loop
         muted
         playsInline
+        preload='auto'
+        poster='/images/hero-poster.jpg'
+        disablePictureInPicture
         src="/videos/IMG_6966.mp4"
       />
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import LazyVideo, { slimCloudinary } from '../Components/LazyVideo'
 
 // Add a `logo: '/images/logos/youthvibe.png'` field once you have the files —
 // it'll render automatically in place of the video.
@@ -55,13 +56,9 @@ const EventLogo = ({ event, index }) => {
         className="group relative flex h-40 items-center justify-center overflow-hidden rounded-2xl border border-white/10 transition-all duration-500 hover:border-white/40 hover:-translate-y-1 md:h-56"
       >
         {event.video ? (
-          <video
-            src={event.video}
+          <LazyVideo
+            src={slimCloudinary(event.video, 640)}
             className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-            autoPlay
-            loop
-            muted
-            playsInline
           />
         ) : event.logo ? (
           <img
@@ -85,8 +82,6 @@ const UniverseSection = () => {
   return (
     <section className="relative z-10 w-full bg-transparent px-6 py-24 md:px-16 md:py-40">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;900&family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
-
         .uni-display { font-family: 'Unbounded', 'Space Grotesk', sans-serif; font-weight: 800; letter-spacing: -0.01em; }
         .uni-body { font-family: 'Space Grotesk', system-ui, sans-serif; }
       `}</style>

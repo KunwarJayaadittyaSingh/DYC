@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import LazyVideo from './LazyVideo'
 
 const HomeBottomtext = () => {
   return (
@@ -10,13 +11,9 @@ const HomeBottomtext = () => {
       </div>
 
       <div className='absolute bottom-2 right-3 w-[16vw] h-[8vw] rounded-full overflow-hidden'>
-        <video
+        <LazyVideo
           className='w-full h-full object-cover'
           src="/videos/dyc-video-logo.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
         />
       </div>
     </>

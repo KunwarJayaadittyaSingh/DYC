@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { REGISTRATIONS, POPUP, getStatus } from '../data/registrations'
+
+// ───────── EASY SETTINGS ─────────
+const INTERVAL_MS = 15000 // popup appears again this long after it was closed (15 seconds)
+const ONLY_EVENT = '/magnitude' // which event the popup is for (its path in registrations.js)
+const STOP_AFTER_REGISTER = true // true = once someone taps "Register", stop reminding them this visit
+const NO_POPUP_ON = '/magnitude/register' // never pop up on the registration page itself
+// ─────────────────────────────────
+
+const STOP_KEY = 'magnitude-popup-registered'
 
 const pad = (n) => String(n).padStart(2, '0')
 
@@ -17,13 +26,22 @@ const countdown = (to, now) => {
 const fmt = (iso) =>
   new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 
-// ONLY events whose registration is open right now (link set, not closed)
+// Only the Magnitude event, and only while its registration is open right now
 const getOpen = (now) =>
-  REGISTRATIONS.filter((e) => e.showInPopup !== false && getStatus(e, now) === 'open').sort(
-    (a, b) => new Date(a.closesAt || '2999-01-01') - new Date(b.closesAt || '2999-01-01')
-  )
+  REGISTRATIONS.filter(
+    (e) =>
+      e.showInPopup !== false &&
+      (e.path === ONLY_EVENT || /magnitude/i.test(e.name || '')) &&
+      getStatus(e, now) === 'open'
+  ).sort((a, b) => new Date(a.closesAt || '2999-01-01') - new Date(b.closesAt || '2999-01-01'))
 
-const signature = (list) => list.map((e) => e.path).join('|')
+const readStopped = () => {
+  try {
+    return sessionStorage.getItem(STOP_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 const ActionButton = ({ url, onClick }) => {
   const cls =
@@ -40,53 +58,57 @@ const ActionButton = ({ url, onClick }) => {
 }
 
 export default function EventsPopup() {
+  const { pathname } = useLocation()
   const [visible, setVisible] = useState(false)
+  const [stopped, setStopped] = useState(readStopped)
+  const [tick, setTick] = useState(0) // used to re-schedule when nothing was open yet
   const [now, setNow] = useState(() => new Date())
   const closeRef = useRef(null)
-  const storeKey = `events-popup:${POPUP.version}`
 
-  // decide whether to show (runs once per page load)
+  const blocked = pathname.startsWith(NO_POPUP_ON)
+  const showing = visible && !blocked
+
+  // Every INTERVAL_MS after the popup is closed (or after the page loads), show it again.
   useEffect(() => {
-    if (!POPUP.enabled) return
-    const open = getOpen(new Date())
-    if (!open.length) return // nothing open → no popup, website stays as it is
-    try {
-      // already dismissed this visit? only show again if a different event opened
-      if (POPUP.repeat === 'session' && sessionStorage.getItem(storeKey) === signature(open)) return
-    } catch {
-      /* storage blocked: just show it */
-    }
-    const t = setTimeout(() => setVisible(true), POPUP.delayMs)
+    if (!POPUP.enabled || visible || stopped || blocked) return
+    const t = setTimeout(() => {
+      const current = new Date()
+      if (getOpen(current).length) {
+        setNow(current)
+        setVisible(true)
+      } else {
+        setTick((n) => n + 1) // Magnitude not open right now: check again in another interval
+      }
+    }, INTERVAL_MS)
     return () => clearTimeout(t)
-  }, [storeKey])
+  }, [visible, stopped, blocked, tick])
 
   // live countdown while visible
   useEffect(() => {
-    if (!visible) return
+    if (!showing) return
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
-  }, [visible])
+  }, [showing])
 
   const open = getOpen(now)
 
-  const close = () => {
+  const close = () => setVisible(false)
+
+  const onRegister = () => {
     setVisible(false)
+    if (!STOP_AFTER_REGISTER) return
+    setStopped(true)
     try {
-      sessionStorage.setItem(storeKey, signature(getOpen(new Date())))
+      sessionStorage.setItem(STOP_KEY, '1')
     } catch {
-      /* ignore */
+      /* storage blocked: just stop for this page load */
     }
   }
 
-  // if the last open event closes while the popup is showing, hide it
+  // Esc to close, lock scroll while open, focus the close button
   useEffect(() => {
-    if (visible && !open.length) setVisible(false)
-  }, [visible, open.length])
-
-  // Esc to close, lock scroll, focus the close button
-  useEffect(() => {
-    if (!visible) return
-    const onKey = (e) => e.key === 'Escape' && close()
+    if (!showing) return
+    const onKey = (e) => e.key === 'Escape' && setVisible(false)
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
@@ -95,10 +117,9 @@ export default function EventsPopup() {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible])
+  }, [showing])
 
-  if (!POPUP.enabled || !visible || !open.length) return null
+  if (!POPUP.enabled || !showing || !open.length) return null
 
   return (
     <div
@@ -107,7 +128,7 @@ export default function EventsPopup() {
       aria-modal="true"
       aria-labelledby="events-popup-title"
     >
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={close} />
+      <div className="absolute inset-0 bg-black/80 md:backdrop-blur-md" onClick={close} />
 
       <div
         className="events-pop relative flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-red-500/40 bg-neutral-950 text-white"
@@ -155,7 +176,7 @@ export default function EventsPopup() {
                     </p>
                   )}
                 </div>
-                <ActionButton url={e.registrationLink} onClick={close} />
+                <ActionButton url={e.registrationLink} onClick={onRegister} />
               </div>
             </li>
           ))}
