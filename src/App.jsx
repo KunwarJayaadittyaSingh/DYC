@@ -21,6 +21,8 @@ const Sponsers = lazy(() => import('./pages/Sponsers'))
 const Gallery = lazy(() => import('./pages/Gallery'))
 const Help = lazy(() => import('./pages/Help'))
 const Feedback = lazy(() => import('./pages/Feedback'))
+const JudgingPage = lazy(() => import('./pages/JudgingPage'))
+const AdminAccess = lazy(() => import('./pages/AdminAccess'))
 
 const App = () => {
   return (
@@ -46,6 +48,8 @@ const App = () => {
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/help" element={<Help />} />
           <Route path="/feedback" element={<Feedback />} />
+          <Route path="/judging" element={<JudgingPage />} />
+          <Route path="/admin" element={<AdminAccess />} />
         </Routes>
       </Suspense>
     </>
