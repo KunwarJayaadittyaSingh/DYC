@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 // ---- PASSWORDS (edit here or in .env, then restart / redeploy) -----------
@@ -13,13 +13,18 @@ const SESSION_KEY = 'dyc_admin_ok';
 const POLL_MS = 10000;
 const JUDGES = [1, 2, 3, 4];
 const TEAMS = [1, 2, 3, 4];
-const DEFAULT_CFG = {
-  team_names: ['Team Spartans', 'Team Vikings', 'Team Titans', 'Team Gladiators'],
-  categories: ['Open Mic', 'Mag Gala', 'Paridhan'],
-  max_score: 10,
-};
 
-// ---- ALL EVENTS (shown on the Allot screen; edit / add lines here) --------
+// ---- EVENT SELECTOR (exact order + casing; extra events are appended after these) ----
+const FEST_EVENTS = ['YOUTHVIBE', 'MAGNITUDE', 'FTS', 'CONCOCTION', 'TEDx', 'HULT PRIZE'];
+// Ask dyc_list to filter by event (`p_event`). If the database function has not been updated yet,
+// the page automatically falls back to filtering in the browser, so nothing breaks either way.
+const SERVER_SIDE_EVENT_FILTER = true;
+// While filtering on the client we ask the server for a larger page so the filter has enough rows.
+const CLIENT_SCOPE_FETCH = 5000;
+// Fields that can say which event a record belongs to.
+const EVENT_FIELDS = ['event', 'eventName', 'event_name', 'eventId', 'event_id', 'category'];
+
+// ---- DEFAULT EVENTS (can be edited live from Settings → Events) -----------
 const EVENTS = [
   { id: 'paridhan', name: 'Paridhan', group: 'Lifestyle', min: 4, max: 15 },
   { id: 'mag gala', name: 'Magnitude Gala', group: 'Lifestyle', min: 1, max: 1 },
@@ -39,7 +44,20 @@ const EVENTS = [
   { id: 'one act play', name: 'One Act Play', group: 'Literary & Theatre', min: 1, max: 1 },
   { id: 'news-debate', name: 'The News Debate', group: 'Literary & Theatre', min: 1, max: 1 },
 ];
-const GROUPS = [...new Set(EVENTS.map((e) => e.group))];
+
+const DEFAULT_CFG = {
+  team_names: ['Team Spartans', 'Team Vikings', 'Team Titans', 'Team Gladiators'],
+  categories: ['Open Mic', 'Mag Gala', 'Paridhan'],
+  max_score: 10,
+  score_step: 0.5, // step of the mark boxes
+  rank_by: 'avg', // 'avg' | 'total'
+  scoring_open: true, // flag saved with the event settings
+  events: null, // null = use the EVENTS list above
+  festival_events: [], // extra events for the Select Event list (names, in the order they were added)
+};
+
+const getEvents = (cfg) => (Array.isArray(cfg.events) && cfg.events.length ? cfg.events : EVENTS);
+
 const GROUP_ICON = {
   Lifestyle: '✨', 'Literary & Theatre': '🎭', eSports: '🎮', Management: '🍳', Sports: '🏃',
 };
@@ -47,11 +65,23 @@ const sizeLabel = (ev) =>
   ev.max === 1 ? 'Solo' : ev.min === ev.max ? `Team of ${ev.max}` : `Team of ${ev.min}–${ev.max}`;
 // --------------------------------------------------------------------------
 
+// ---- BACKGROUND THEMES (colours: glow 1, glow 2, glow 3, deep base) -------
+const THEMES = {
+  crimson: { name: 'Crimson', colors: ['#ef4444', '#be123c', '#f97316', '#450a0a'] },
+  sunset: { name: 'Sunset', colors: ['#f97316', '#ec4899', '#facc15', '#431407'] },
+  rose: { name: 'Rose', colors: ['#f43f5e', '#d946ef', '#fb7185', '#4c0519'] },
+  plum: { name: 'Plum', colors: ['#a855f7', '#e11d48', '#6366f1', '#2e1065'] },
+  midnight: { name: 'Midnight', colors: ['#3b82f6', '#8b5cf6', '#06b6d4', '#0f172a'] },
+};
+const BG_DEFAULT = { theme: 'crimson', motion: true };
+// --------------------------------------------------------------------------
+
 // Everything except Settings opens on laptops / desktops only.
 const MOBILE_UA = /Android|iPhone|iPod|Mobile/i;
 const isDesk = () => window.innerWidth >= 1024 && !MOBILE_UA.test(navigator.userAgent);
 
-const GLASS = 'rounded-3xl border bg-white/[0.04] backdrop-blur-xl';
+// Cards use a solid tint instead of backdrop-blur, so the animated background never makes them lag.
+const GLASS = 'rounded-3xl border bg-zinc-950/60';
 const IDLE = 'border-white/10 shadow-[0_8px_40px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.06)]';
 const ACTIVE = 'border-red-500/60 shadow-[0_18px_60px_rgba(239,68,68,0.22),inset_0_1px_0_rgba(255,255,255,0.1)]';
 const INPUT = 'w-full rounded-xl border border-white/10 bg-black/60 px-4 py-3 text-white placeholder:text-zinc-600 outline-none transition focus:border-red-500/70 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)]';
@@ -65,16 +95,46 @@ const rpc = async (fn, args) => {
   return data;
 };
 
+const downloadFile = (name, text, type) => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+};
+
 const downloadCsv = (name, list) => {
   if (!list.length) return;
   const cols = Object.keys(list[0]);
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const text = [cols.join(','), ...list.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
-  a.download = name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  downloadFile(name, text, 'text/csv');
+};
+
+// small CSV reader (handles quotes, commas and line breaks inside quotes)
+const parseCsv = (text) => {
+  const out = [];
+  let row = [];
+  let cur = '';
+  let q = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const c = text[i];
+    if (q) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { cur += '"'; i += 1; } else q = false;
+      } else cur += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(cur); cur = '';
+      if (row.some((x) => x.trim() !== '')) out.push(row);
+      row = [];
+    } else cur += c;
+  }
+  row.push(cur);
+  if (row.some((x) => x.trim() !== '')) out.push(row);
+  return out;
 };
 
 const initials = (n) =>
@@ -82,6 +142,22 @@ const initials = (n) =>
 
 // letters + digits only, lower case
 const norm = (s) => String(s ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const slug = (s) =>
+  String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'event';
+
+const stamp = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+
+// header names accepted when importing a CSV → participant field
+const HEADER_MAP = {
+  registrationno: 'registration_no', registration: 'registration_no', regno: 'registration_no', reg: 'registration_no',
+  studentname: 'student_name', name: 'student_name',
+  phone: 'phone', mobile: 'phone', contact: 'phone',
+  email: 'email', mail: 'email',
+  category: 'category', event: 'category',
+  chestno: 'chest_no', chest: 'chest_no',
+  teamno: 'team_no', team: 'team_no',
+};
 
 // does a stored value (registered category / saved extra event) refer to this event?
 // matches the event name or id, and still works for longer text like "Open Mic - Solo"
@@ -93,6 +169,78 @@ const matches = (value, ev) => {
     return v === n || v.includes(n) || n.includes(v);
   });
 };
+
+// ---- event scope: which records belong to the event picked at the top ----
+const recordEventValues = (rec) => {
+  if (!rec) return [];
+  const out = EVENT_FIELDS.map((k) => rec[k]);
+  if (Array.isArray(rec.extra_events)) out.push(...rec.extra_events);
+  return out.filter((v) => v !== undefined && v !== null && String(v).trim() !== '');
+};
+
+// `label` keeps its exact UI casing. Comparison is case/space/punctuation-insensitive,
+// so "YOUTHVIBE" matches "youthvibe" and "YouthVibe" in the database.
+// MAGNITUDE also owns its sub-events (Paridhan, Open Mic, ...), which is how its records are filed.
+const makeScope = (label, subEvents = []) => {
+  const key = norm(label);
+  const isMagnitude = key === 'magnitude';
+  const has = (rec) =>
+    recordEventValues(rec).some((v) => norm(v) === key || (isMagnitude && subEvents.some((ev) => matches(v, ev))));
+  const slugName = String(label).trim().replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'EVENT';
+  return {
+    label,
+    key,
+    slug: slugName,
+    has,
+    // new / imported participants are filed under the event name (MAGNITUDE keeps its own categories)
+    defaultCategory: isMagnitude ? '' : label,
+    // e.g. YOUTHVIBE_participants_2026.csv
+    file: (base, ext = 'csv') => `${slugName}_${base}_${new Date().getFullYear()}.${ext}`,
+  };
+};
+
+// dyc_list, limited to the active event. Same RPC and arguments as before.
+const fetchPeople = async (scope, q = '', limit = 300) => {
+  if (scope && SERVER_SIDE_EVENT_FILTER) {
+    try {
+      return (await rpc('dyc_list', { p_q: q, p_limit: limit, p_event: scope.label })) || [];
+    } catch (e) {
+      // only an old dyc_list (no p_event yet) falls through to the browser-side filter below
+      if (!/p_event|function/i.test(String(e.message))) throw e;
+    }
+  }
+  const list = (await rpc('dyc_list', { p_q: q, p_limit: scope ? Math.max(limit, CLIENT_SCOPE_FETCH) : limit })) || [];
+  return scope ? list.filter(scope.has).slice(0, limit) : list;
+};
+
+const ScopeContext = createContext(null);
+const useScope = () => useContext(ScopeContext);
+
+// Summary numbers for one event, worked out from that event's participants + marks.
+function scopedStats(people, scoreRows, dueRemoval) {
+  const hasChest = (p) => String(p.chest_no ?? '').trim() !== '';
+  const picked = (p) => Number(p.team_no) > 0;
+  const cats = new Map();
+  people.forEach((p) => {
+    const c = String(p.category ?? '').trim();
+    if (!c) return;
+    const e = cats.get(c) || { category: c, registered: 0, arrived: 0, selected: 0 };
+    e.registered += 1;
+    if (hasChest(p)) e.arrived += 1;
+    if (picked(p)) e.selected += 1;
+    cats.set(c, e);
+  });
+  return {
+    registered: people.length,
+    arrived: people.filter(hasChest).length,
+    selected: people.filter(picked).length,
+    waiting: people.filter((p) => hasChest(p) && !picked(p)).length,
+    scores: scoreRows.length,
+    teams: TEAMS.map((t) => ({ team: t, count: people.filter((p) => Number(p.team_no) === t).length })),
+    categories: [...cats.values()].sort((a, b) => b.registered - a.registered),
+    due_removal: dueRemoval, // only available across all events
+  };
+}
 
 function useIsDesktop() {
   const [d, setD] = useState(isDesk);
@@ -106,14 +254,51 @@ function useIsDesktop() {
 
 function useConfig() {
   const [cfg, setCfg] = useState(DEFAULT_CFG);
+  const [ready, setReady] = useState(false);
   const load = useCallback(async () => {
     try {
       const d = await rpc('dyc_get_config');
       if (d) setCfg({ ...DEFAULT_CFG, ...d });
     } catch { /* keep defaults */ }
+    finally { setReady(true); }
   }, []);
   useEffect(() => { load(); }, [load]);
-  return [cfg, load];
+  return [cfg, load, ready];
+}
+
+// value kept in this browser only (appearance, auto-lock)
+function useLocalState(key, initial) {
+  const [v, setV] = useState(() => {
+    try {
+      const s = localStorage.getItem(key);
+      return s === null ? initial : JSON.parse(s);
+    } catch { return initial; }
+  });
+  const set = useCallback((n) => {
+    setV(n);
+    try { localStorage.setItem(key, JSON.stringify(n)); } catch { /* ignore */ }
+  }, [key]);
+  return [v, set];
+}
+
+// save one setting to the event config and refresh it
+function usePut(reloadCfg) {
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const put = async (key, value, okText) => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await rpc('dyc_set_config', { p_key: key, p_value: value });
+      await reloadCfg();
+      setMsg({ ok: true, text: okText });
+      return true;
+    } catch (e) {
+      setMsg({ ok: false, text: e.message });
+      return false;
+    } finally { setBusy(false); }
+  };
+  return [put, msg, busy];
 }
 
 function usePoll(fn, deps) {
@@ -129,7 +314,7 @@ function usePoll(fn, deps) {
 }
 
 // Team totals + ranked participants from the raw score rows
-function summarise(rows) {
+function summarise(rows, rankBy) {
   const teamStats = TEAMS.map((t) => {
     const r = rows.filter((x) => x.team === t);
     return { team: t, entries: r.length, total: r.reduce((a, x) => a + Number(x.score || 0), 0) };
@@ -153,25 +338,63 @@ function summarise(rows) {
       avg: s.total / s.marks.length,
       marks: [...s.marks].sort((a, b) => a.judge - b.judge),
     }))
-    .sort((a, b) => b.avg - a.avg);
-  return { teamStats, students };
+    .sort((a, b) => (rankBy === 'total' ? b.total - a.total || b.avg - a.avg : b.avg - a.avg || b.total - a.total));
+  return { teamStats, students, rankBy: rankBy === 'total' ? 'total' : 'avg' };
 }
 
+/* ---------- animated background (transform-only, so it stays smooth) ---------- */
+const PAGE_CSS = `
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
+  @keyframes ringPulse{0%{transform:scale(1);opacity:.6}100%{transform:scale(1.55);opacity:0}}
+  @keyframes driftA{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(12vmax,8vmax,0) scale(1.12)}}
+  @keyframes driftB{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-10vmax,-9vmax,0) scale(1.1)}}
+  @keyframes driftC{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(8vmax,-10vmax,0) scale(1.15)}}
+  .fade-up{animation:fadeUp .4s ease both}
+  .pop{animation:pop .35s cubic-bezier(.2,1.4,.4,1) both}
+  @keyframes dropIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+  .drop-in{animation:dropIn .18s ease-out both;transform-origin:top center}
+  .ring{position:relative}
+  .ring::after{content:'';position:absolute;inset:0;border-radius:9999px;border:2px solid rgba(239,68,68,.55);animation:ringPulse 1.8s ease-out infinite;pointer-events:none}
+  .bg-blob{position:absolute;border-radius:9999px;will-change:transform;transform:translate3d(0,0,0)}
+  .bg-blob-a{animation:driftA 38s ease-in-out infinite}
+  .bg-blob-b{animation:driftB 46s ease-in-out infinite}
+  .bg-blob-c{animation:driftC 54s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){.fade-up,.pop,.drop-in,.ring::after,.bg-blob-a,.bg-blob-b,.bg-blob-c{animation:none}}
+`;
+
+const Backdrop = memo(function Backdrop({ theme, motion }) {
+  const [a, b, c, d] = (THEMES[theme] || THEMES.crimson).colors;
+  const blob = (color, extra) => ({
+    ...extra,
+    background: `radial-gradient(circle at center, ${color}59 0%, ${color}00 62%)`,
+  });
+  return (
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-black" style={{ contain: 'strict' }}>
+      <div className="absolute inset-0" style={{ background: `linear-gradient(180deg, ${d}80 0%, #000 58%)` }} />
+      <div className={`bg-blob ${motion ? 'bg-blob-a' : ''}`} style={blob(a, { width: '68vmax', height: '68vmax', left: '-18vmax', top: '-26vmax' })} />
+      <div className={`bg-blob ${motion ? 'bg-blob-b' : ''}`} style={blob(b, { width: '60vmax', height: '60vmax', right: '-20vmax', top: '18vh' })} />
+      <div className={`bg-blob ${motion ? 'bg-blob-c' : ''}`} style={blob(c, { width: '56vmax', height: '56vmax', left: '12vw', bottom: '-30vmax' })} />
+      <div
+        className="absolute inset-0 opacity-70"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+          WebkitMaskImage: 'radial-gradient(ellipse at 50% 28%, #000 0%, transparent 72%)',
+          maskImage: 'radial-gradient(ellipse at 50% 28%, #000 0%, transparent 72%)',
+        }}
+      />
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.7) 100%)' }} />
+    </div>
+  );
+});
+
 /* ---------- small shared pieces ---------- */
-const Page = ({ children }) => (
+const Page = ({ children, theme, motion }) => (
   <div className="relative min-h-screen overflow-hidden bg-black px-4 pb-14 pt-28 text-white">
-    <style>{`
-      @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-      @keyframes pop{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:none}}
-      @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(239,68,68,.45)}100%{box-shadow:0 0 0 14px rgba(239,68,68,0)}}
-      .fade-up{animation:fadeUp .4s ease both}
-      .pop{animation:pop .35s cubic-bezier(.2,1.4,.4,1) both}
-      .ring{animation:pulseRing 1.6s ease-out infinite}
-      @media (prefers-reduced-motion:reduce){.fade-up,.pop,.ring{animation:none}}
-    `}</style>
-    <div className="pointer-events-none absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-red-600/20 blur-[120px]" />
-    <div className="pointer-events-none absolute right-0 top-1/2 h-96 w-96 rounded-full bg-red-900/20 blur-[140px]" />
-    <div className="relative mx-auto max-w-6xl">{children}</div>
+    <style>{PAGE_CSS}</style>
+    <Backdrop theme={theme} motion={motion} />
+    <div className="relative z-10 mx-auto max-w-6xl">{children}</div>
   </div>
 );
 
@@ -200,6 +423,296 @@ const Info = ({ k, v }) => (
   </div>
 );
 
+const Section = ({ title, hint, children, className = '' }) => (
+  <div className={`space-y-3 p-6 ${GLASS} ${IDLE} ${className}`}>
+    <div>
+      <h3 className="font-semibold">{title}</h3>
+      {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
+    </div>
+    {children}
+  </div>
+);
+
+// pill-style choice buttons
+const Seg = ({ value, options, onChange, disabled }) => (
+  <div className="flex flex-wrap gap-2">
+    {options.map(([v, label]) => (
+      <button key={String(v)} type="button" disabled={disabled} onClick={() => onChange(v)}
+        className={`rounded-full border px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${value === v ? 'border-red-500 bg-red-500 text-black' : 'border-white/15 text-zinc-300 hover:border-red-500/60'}`}>
+        {label}
+      </button>
+    ))}
+  </div>
+);
+
+const Spinner = ({ className = 'h-5 w-5' }) => (
+  <span aria-hidden="true" className={`inline-block animate-spin rounded-full border-2 border-red-500/30 border-t-red-500 motion-reduce:animate-none ${className}`} />
+);
+
+const WorkspaceLoading = ({ label }) => (
+  <div role="status" aria-live="polite" className="space-y-6">
+    <div className="flex items-center gap-3 text-sm text-zinc-300"><Spinner /> {label}…</div>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {[0, 1, 2].map((i) => <div key={i} className={`h-40 animate-pulse motion-reduce:animate-none ${GLASS} ${IDLE}`} />)}
+    </div>
+  </div>
+);
+
+const EventEmptyState = () => (
+  <div role="status" className={`fade-up mx-auto mt-4 max-w-lg space-y-3 p-10 text-center ${GLASS} ${IDLE}`}>
+    <div className="text-5xl">🗂️</div>
+    <h2 className="text-xl font-semibold">No event selected</h2>
+    <p className="text-sm text-zinc-400">Select an event above to load participant records, stats and exports.</p>
+  </div>
+);
+
+// each festival gets its own colour; events added later cycle through the spare colours
+const EVENT_ACCENT = { youthvibe: '#f97316', magnitude: '#ec4899', fts: '#06b6d4', concoction: '#a855f7', tedx: '#ef4444', hultprize: '#facc15' };
+const SPARE_ACCENT = ['#22c55e', '#3b82f6', '#f43f5e', '#14b8a6'];
+const accentFor = (label, i) => EVENT_ACCENT[norm(label)] || SPARE_ACCENT[(i - FEST_EVENTS.length) % SPARE_ACCENT.length] || '#ef4444';
+
+// numbers ease up to their value (skipped when the system asks for reduced motion)
+function CountUp({ value }) {
+  const [n, setN] = useState(0);
+  const from = useRef(0);
+  useEffect(() => {
+    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce || from.current === value) { setN(value); from.current = value; return undefined; }
+    const a = from.current;
+    const t0 = performance.now();
+    let raf;
+    const tick = (t) => {
+      const k = Math.min((t - t0) / 700, 1);
+      setN(Math.round(a + (value - a) * (1 - (1 - k) ** 3)));
+      if (k < 1) raf = requestAnimationFrame(tick); else from.current = value;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return <>{n}</>;
+}
+
+function EventSelector({ options, value, onChange, unknown, subEvents = [], stats = null }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [hi, setHi] = useState(0);
+  const [counts, setCounts] = useState(null);
+  const trigger = useRef(null);
+  const search = useRef(null);
+  const itemRefs = useRef([]);
+  const colsRef = useRef(1);
+
+  const shown = useMemo(() => {
+    const q = norm(query);
+    return options.map((name, index) => ({ name, index })).filter((o) => !q || norm(o.name).includes(q));
+  }, [options, query]);
+
+  const valueIndex = value ? options.indexOf(value) : -1;
+  const accent = value ? accentFor(value, valueIndex) : null;
+
+  const close = (refocus) => { setOpen(false); if (refocus) trigger.current?.focus(); };
+  const openMenu = useCallback(() => {
+    const w = window.innerWidth;
+    colsRef.current = w >= 1024 ? 3 : w >= 640 ? 2 : 1;
+    setQuery('');
+    setHi(Math.max(0, valueIndex));
+    setOpen(true);
+  }, [valueIndex]);
+  const pick = (name) => { onChange(name); close(true); };
+
+  // Ctrl / Cmd + K opens the switcher from anywhere on the page
+  useEffect(() => {
+    const f = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openMenu(); }
+    };
+    window.addEventListener('keydown', f);
+    return () => window.removeEventListener('keydown', f);
+  }, [openMenu]);
+
+  useEffect(() => { if (open) search.current?.focus(); }, [open]);
+  useEffect(() => { if (open) itemRefs.current[hi]?.scrollIntoView({ block: 'nearest' }); }, [hi, open]);
+
+  // registered people per event, refreshed every time the switcher opens
+  useEffect(() => {
+    if (!open) return undefined;
+    let live = true;
+    (async () => {
+      try {
+        const list = await fetchPeople(null, '', CLIENT_SCOPE_FETCH);
+        if (!live) return;
+        const next = {};
+        options.forEach((name) => {
+          const sc = makeScope(name, subEvents);
+          next[name] = sc.key === 'magnitude' && SERVER_SIDE_EVENT_FILTER ? list.length : list.filter(sc.has).length;
+        });
+        setCounts(next);
+      } catch { /* counts are optional */ }
+    })();
+    return () => { live = false; };
+  }, [open, options, subEvents]);
+
+  const move = (d) => setHi((i) => Math.max(0, Math.min(i + d, shown.length - 1)));
+  const onKey = (e) => {
+    if (!open) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openMenu(); }
+      return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); close(true); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); move(colsRef.current); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); move(-colsRef.current); }
+    else if (e.key === 'ArrowRight' && !query) { e.preventDefault(); move(1); }
+    else if (e.key === 'ArrowLeft' && !query) { e.preventDefault(); move(-1); }
+    else if (e.key === 'Enter') { e.preventDefault(); if (shown[hi]) pick(shown[hi].name); }
+    else if (e.key === 'Tab') setOpen(false);
+  };
+
+  const spot = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty('--x', `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty('--y', `${e.clientY - r.top}px`);
+  };
+
+  return (
+    <section aria-label="Event selector" className="relative z-20 mb-8">
+      <p id="admin-event-label" className="mb-2 text-sm font-medium text-zinc-300">Select Event</p>
+
+      <div className="relative z-30" onKeyDown={onKey}>
+        {/* ---- the bar you see all the time ---- */}
+        <button ref={trigger} type="button" role="combobox" aria-haspopup="listbox" aria-expanded={open}
+          aria-controls="admin-event-list" aria-labelledby="admin-event-label"
+          onClick={() => (open ? close(false) : openMenu())} onMouseMove={spot}
+          className="group relative z-30 flex w-full flex-wrap items-center gap-x-6 gap-y-4 overflow-hidden rounded-[28px] border px-5 py-5 text-left outline-none transition duration-300 focus-visible:ring-2 focus-visible:ring-white/40 sm:px-6"
+          style={{
+            borderColor: accent ? (open ? `${accent}cc` : `${accent}55`) : (open ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)'),
+            background: `linear-gradient(100deg, ${accent || '#ef4444'}${accent ? '38' : '24'} 0%, rgba(9,9,11,0.55) 42%, rgba(9,9,11,0.28) 100%)`,
+            boxShadow: accent ? `0 24px 60px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.1)` : 'inset 0 1px 0 rgba(255,255,255,0.08)',
+          }}>
+          <span aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+            style={{ background: `radial-gradient(420px circle at var(--x, 30%) var(--y, 50%), ${accent || '#ef4444'}26, transparent 70%)` }} />
+
+          <span className="relative grid h-16 w-16 shrink-0 place-items-center rounded-2xl text-xl font-extrabold transition duration-300 group-hover:scale-105"
+            style={accent
+              ? { background: `linear-gradient(145deg, ${accent}, ${accent}b3)`, color: '#000', boxShadow: `0 10px 30px ${accent}66, inset 0 1px 0 rgba(255,255,255,0.45)` }
+              : { border: '1px dashed rgba(255,255,255,0.3)', color: '#a1a1aa', background: 'rgba(255,255,255,0.04)' }}>
+            {value ? initials(value) : '＋'}
+          </span>
+
+          <span className="relative min-w-0 flex-1 basis-56">
+            <span className="flex items-center gap-3">
+              <span className={`truncate text-xl font-extrabold tracking-tight sm:text-2xl ${value ? 'text-white' : 'text-zinc-200'}`}>
+                {value || '-- Choose an Event to View Data --'}
+              </span>
+              {value && (
+                <span className="flex shrink-0 items-center gap-1.5 rounded-full border border-green-400/25 bg-green-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-green-400">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-400 motion-reduce:animate-none" />Live
+                </span>
+              )}
+            </span>
+            <span className="mt-1 block truncate text-sm text-zinc-400">
+              {value ? 'Everything below shows this event only' : 'Pick an event to load its participants, stats and exports'}
+            </span>
+            {value && stats && (
+              <span className="mt-3 flex max-w-sm items-center gap-3">
+                <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <span className="block h-full rounded-full transition-all duration-700"
+                    style={{ width: `${stats.registered ? Math.round((stats.arrived / stats.registered) * 100) : 0}%`, background: `linear-gradient(90deg, ${accent}, #ffffff)` }} />
+                </span>
+                <span className="text-xs tabular-nums text-zinc-400">{stats.registered ? Math.round((stats.arrived / stats.registered) * 100) : 0}% arrived</span>
+              </span>
+            )}
+          </span>
+
+          {value && stats && (
+            <span className="relative flex items-stretch">
+              {[['Registered', stats.registered], ['Arrived', stats.arrived]].map(([k, v], i) => (
+                <span key={k} className={`px-5 text-center sm:px-7 ${i ? 'border-l border-white/10' : ''}`}>
+                  <span className="block text-3xl font-extrabold leading-none tabular-nums sm:text-4xl"><CountUp value={v} /></span>
+                  <span className="mt-2 block text-[11px] font-medium text-zinc-400">{k}</span>
+                </span>
+              ))}
+            </span>
+          )}
+
+          <span className="relative flex items-center gap-2.5 rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-xs font-semibold text-zinc-100 transition group-hover:border-white/30 group-hover:bg-white/10">
+            {value ? 'Switch event' : 'Choose event'}
+            <svg aria-hidden="true" width="12" height="12" viewBox="0 0 14 14" fill="none" className={`transition duration-300 ${open ? 'rotate-180' : ''}`}>
+              <path d="M3 5.25 7 9.25l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400 sm:block">Ctrl K</kbd>
+          </span>
+        </button>
+
+        {/* ---- the switcher ---- */}
+        {open && (
+          <>
+            <div aria-hidden="true" className="fixed inset-0 z-20 bg-black/65" onClick={() => close(false)} />
+            <div className="drop-in absolute left-0 right-0 top-full z-30 mt-3 overflow-hidden rounded-[28px] border border-white/15 bg-zinc-950/95 shadow-[0_30px_90px_rgba(0,0,0,0.85)]">
+              <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 16 16" fill="none" className="shrink-0 text-zinc-500">
+                  <circle cx="7" cy="7" r="4.75" stroke="currentColor" strokeWidth="1.6" /><path d="m10.75 10.75 3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+                <input ref={search} value={query} onChange={(e) => { setQuery(e.target.value); setHi(0); }} autoComplete="off" spellCheck={false}
+                  aria-label="Search events" aria-controls="admin-event-list" placeholder="Search events…"
+                  className="w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-600" />
+                <kbd className="hidden rounded-md border border-white/15 px-1.5 py-0.5 text-[10px] text-zinc-500 sm:block">esc</kbd>
+              </div>
+
+              <ul id="admin-event-list" role="listbox" aria-labelledby="admin-event-label"
+                className="grid max-h-[26rem] grid-cols-1 gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
+                {shown.length === 0 && <li className="col-span-full px-4 py-10 text-center text-sm text-zinc-500">No event matches &quot;{query}&quot;</li>}
+                {shown.map((o, i) => {
+                  const on = o.name === value;
+                  const active = i === hi;
+                  const c = accentFor(o.name, o.index);
+                  const n = counts ? counts[o.name] : null;
+                  return (
+                    <li key={o.name} role="option" aria-selected={on} ref={(el) => { itemRefs.current[i] = el; }}
+                      className="fade-up" style={{ animationDelay: `${Math.min(i, 8) * 35}ms` }}>
+                      <button type="button" tabIndex={-1} onClick={() => pick(o.name)} onMouseMove={(e) => { spot(e); if (hi !== i) setHi(i); }}
+                        className="relative flex h-full w-full flex-col justify-between gap-5 overflow-hidden rounded-2xl border bg-zinc-900/70 p-4 text-left transition duration-200 hover:-translate-y-0.5"
+                        style={{
+                          borderColor: on ? c : active ? `${c}99` : 'rgba(255,255,255,0.08)',
+                          boxShadow: on || active ? `0 14px 36px ${c}2b` : 'none',
+                        }}>
+                        <span aria-hidden="true" className="pointer-events-none absolute inset-0 transition-opacity duration-200"
+                          style={{ opacity: active ? 1 : 0, background: `radial-gradient(240px circle at var(--x, 50%) var(--y, 0%), ${c}33, transparent 70%)` }} />
+                        <span className="relative flex items-center justify-between gap-2">
+                          <span className="grid h-9 w-9 place-items-center rounded-xl text-xs font-extrabold text-black" style={{ background: c }}>{initials(o.name)}</span>
+                          {on
+                            ? <span className="rounded-full px-2.5 py-1 text-[11px] font-semibold text-black" style={{ background: c }}>Selected</span>
+                            : <span className={`text-[11px] text-zinc-500 transition ${active ? 'opacity-100' : 'opacity-0'}`}>Enter ↵</span>}
+                        </span>
+                        <span className="relative">
+                          <span className="block truncate text-base font-bold text-white">{o.name}</span>
+                          <span className="mt-1 flex items-baseline gap-1.5 text-xs text-zinc-500">
+                            {n === null
+                              ? <span className="inline-block h-4 w-8 animate-pulse rounded bg-white/10 motion-reduce:animate-none" />
+                              : <span className="text-base font-bold tabular-nums text-zinc-200">{n}</span>}
+                            registered
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <div className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3 text-xs text-zinc-500">
+                <span className="hidden sm:inline">Arrow keys to move · Enter to open · Esc to close</span>
+                {value
+                  ? <button type="button" onClick={() => pick('')} className="ml-auto rounded-full px-3 py-1.5 text-zinc-300 transition hover:bg-white/10 hover:text-white">Clear selection</button>
+                  : <span className="ml-auto">{options.length} events</span>}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {unknown && <p className="mt-3 text-sm text-amber-300">&quot;{unknown}&quot; is not a known event. Pick one from the list.</p>}
+    </section>
+  );
+}
+
 /* =========================================================================
    MAIN
    ========================================================================= */
@@ -213,11 +726,50 @@ export default function AdminAccess() {
   const [view, setView] = useState('home');
   const [settingsOk, setSettingsOk] = useState(false);
 
-  const [cfg, reloadCfg] = useConfig();
+  // saved on this device only
+  const [bgRaw, setBg] = useLocalState('dyc_admin_bg', BG_DEFAULT);
+  const bg = { ...BG_DEFAULT, ...bgRaw };
+  const [autoLock, setAutoLock] = useLocalState('dyc_admin_autolock', 0);
+  const lastActive = useRef(Date.now());
+
+  const [cfg, reloadCfg, cfgReady] = useConfig();
+  const events = useMemo(() => getEvents(cfg), [cfg]);
   const tn = (n) => cfg.team_names[n - 1] || `Team ${n}`;
 
-  const [rows, setRows] = useState([]);
-  const [stats, setStats] = useState(null);
+  // ---- event selection, kept in the URL (?event=YOUTHVIBE) so reloads and shared links keep it ----
+  const [searchParams, setSearchParams] = useSearchParams();
+  const eventParam = (searchParams.get('event') || '').trim();
+  const eventOptions = useMemo(() => {
+    const seen = new Set(FEST_EVENTS.map(norm));
+    const extra = [];
+    (Array.isArray(cfg.festival_events) ? cfg.festival_events : []).forEach((x) => {
+      const name = String(typeof x === 'string' ? x : x?.name ?? '').trim();
+      if (name && !seen.has(norm(name))) { seen.add(norm(name)); extra.push(name); }
+    });
+    return [...FEST_EVENTS, ...extra];
+  }, [cfg.festival_events]);
+  const selectedEvent = useMemo(
+    () => (eventParam ? eventOptions.find((o) => norm(o) === norm(eventParam)) || null : null),
+    [eventParam, eventOptions]
+  );
+  const eventPending = Boolean(eventParam) && !selectedEvent && !cfgReady; // link to an extra event, list still loading
+  const eventUnknown = Boolean(eventParam) && !selectedEvent && cfgReady;
+  const selectedKey = selectedEvent ? norm(selectedEvent) : '';
+  const scope = useMemo(() => (selectedEvent ? makeScope(selectedEvent, events) : null), [selectedEvent, events]);
+
+  const chooseEvent = useCallback((label) => {
+    const next = new URLSearchParams(searchParams);
+    if (label) next.set('event', label); else next.delete('event');
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  const [rows, setRows] = useState([]); // every score row; narrowed to the event below
+  const [rowsReady, setRowsReady] = useState(false);
+  const [globalStats, setGlobalStats] = useState(null);
+  const [people, setPeople] = useState([]); // participants of the selected event only
+  const [peopleFor, setPeopleFor] = useState('');
+  const [peopleError, setPeopleError] = useState('');
+  const keyRef = useRef(selectedKey);
 
   const current = !desktop && view !== 'settings' ? 'home' : view;
 
@@ -225,18 +777,19 @@ export default function AdminAccess() {
     e.preventDefault();
     if (input === ADMIN_PASSWORD) {
       sessionStorage.setItem(SESSION_KEY, '1');
+      lastActive.current = Date.now();
       setUnlocked(true);
       setPwError(false);
     } else setPwError(true);
   };
 
-  const lock = () => {
+  const lock = useCallback(() => {
     sessionStorage.removeItem(SESSION_KEY);
     setUnlocked(false);
     setInput('');
     setSettingsOk(false);
     setView('home');
-  };
+  }, []);
 
   const goHome = () => { setSettingsOk(false); setView('home'); };
   const open = (id) => { if (desktop || id === 'settings') setView(id); };
@@ -244,15 +797,44 @@ export default function AdminAccess() {
   const loadRows = useCallback(async () => {
     const { data } = await supabase.from('judge_scores').select('*').order('created_at', { ascending: false });
     if (data) setRows(data);
+    setRowsReady(true);
   }, []);
 
-  const loadStats = useCallback(async () => {
-    try { setStats(await rpc('dyc_stats')); } catch { /* ignore */ }
+  const loadPeople = useCallback(async () => {
+    if (!scope) return;
+    const k = scope.key;
+    try {
+      const list = await fetchPeople(scope, '', CLIENT_SCOPE_FETCH);
+      if (keyRef.current !== k) return; // the admin already switched to another event
+      setPeople(list);
+      setPeopleError('');
+      setPeopleFor(k);
+    } catch (e) {
+      if (keyRef.current !== k) return;
+      setPeopleError(e.message || 'Could not load participants.');
+      setPeopleFor(k);
+    }
+  }, [scope]);
+
+  // only used for the "arrived 5+ days ago" count, which the server can give for all events only
+  const loadGlobalStats = useCallback(async () => {
+    try { setGlobalStats(await rpc('dyc_stats')); } catch { /* ignore */ }
   }, []);
 
-  // live scores
+  const loadStats = useCallback(() => { loadPeople(); loadGlobalStats(); }, [loadPeople, loadGlobalStats]);
+
+  // switching events: drop the old event's data straight away and show the loading state
   useEffect(() => {
-    if (!unlocked) return;
+    keyRef.current = selectedKey;
+    setPeople([]);
+    setPeopleFor('');
+    setPeopleError('');
+  }, [selectedKey]);
+
+  // live scores (loaded once an event is chosen)
+  const hasEvent = Boolean(selectedEvent);
+  useEffect(() => {
+    if (!unlocked || !hasEvent) return undefined;
     loadRows();
     const channel = supabase
       .channel('admin_scores_live')
@@ -267,23 +849,56 @@ export default function AdminAccess() {
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [unlocked, loadRows]);
+  }, [unlocked, hasEvent, loadRows]);
 
-  // participant stats
+  // participants + stats of the selected event
   useEffect(() => {
-    if (!unlocked) return;
+    if (!unlocked || !hasEvent) return undefined;
     loadStats();
     const t = setInterval(loadStats, POLL_MS);
     return () => clearInterval(t);
-  }, [unlocked, loadStats]);
+  }, [unlocked, hasEvent, loadStats]);
 
-  const sum = useMemo(() => summarise(rows), [rows]);
+  // auto-lock after a period of no clicks / keys / scrolling
+  useEffect(() => {
+    if (!unlocked || !autoLock) return undefined;
+    lastActive.current = Date.now();
+    const bump = () => { lastActive.current = Date.now(); };
+    const names = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+    names.forEach((n) => window.addEventListener(n, bump, { passive: true }));
+    const t = setInterval(() => {
+      if (Date.now() - lastActive.current > autoLock * 60000) lock();
+    }, 15000);
+    return () => {
+      names.forEach((n) => window.removeEventListener(n, bump));
+      clearInterval(t);
+    };
+  }, [unlocked, autoLock, lock]);
+
+  const scopedRows = useMemo(() => (scope ? rows.filter(scope.has) : []), [rows, scope]);
+  // scoring categories that belong to this event (falls back to the event name itself)
+  const scopedCats = useMemo(() => {
+    if (!scope) return cfg.categories;
+    const own = cfg.categories.filter((c) => scope.has({ category: c }));
+    return own.length ? own : [scope.label];
+  }, [cfg.categories, scope]);
+  const scopedCfg = useMemo(() => ({ ...cfg, categories: scopedCats }), [cfg, scopedCats]);
+  const sum = useMemo(() => summarise(scopedRows, cfg.rank_by), [scopedRows, cfg.rank_by]);
+  const peopleReady = Boolean(selectedKey) && peopleFor === selectedKey;
+  const stats = useMemo(
+    () => (peopleReady ? scopedStats(people, scopedRows, globalStats?.due_removal) : null),
+    [peopleReady, people, scopedRows, globalStats]
+  );
+  const loadingEvent = hasEvent && (!peopleReady || !rowsReady);
+  const noRecords = hasEvent && !loadingEvent && !peopleError && people.length === 0 && scopedRows.length === 0;
   const leader = [...sum.teamStats].sort((a, b) => b.total - a.total)[0];
+  const theme = THEMES[bg.theme] ? bg.theme : 'crimson';
+  const tc = THEMES[theme].colors;
 
   /* ---------- admin password gate ---------- */
   if (!unlocked)
     return (
-      <Page>
+      <Page theme={theme} motion={bg.motion}>
         <form onSubmit={tryUnlock} className={`fade-up mx-auto mt-10 max-w-sm space-y-5 p-8 ${GLASS} ${IDLE}`}>
           <h1 className="bg-linear-to-r from-white to-red-400 bg-clip-text text-3xl font-bold text-transparent">Admin Access</h1>
           <p className="text-sm text-zinc-400">Restricted to authorised members only.</p>
@@ -304,9 +919,9 @@ export default function AdminAccess() {
     { id: 'allot', icon: '🎫', title: 'Allot Chest No.', desk: true,
       blurb: 'Look up a registration number, see all details, add other events and give the chest number.',
       chips: [stats ? `${stats.arrived} allotted` : '…', stats ? `${stats.registered - stats.arrived} waiting` : ''] },
-    { id: 'scores', icon: '✍️', title: 'Score Control', desk: true,
+    { id: 'scores', icon: '🎯', title: 'Score Control', desk: true,
       blurb: 'Enter a mark, or change any judge’s mark for any participant, even after it was given.',
-      chips: [`${rows.length} marks`, `${JUDGES.length} judges`] },
+      chips: [`${scopedRows.length} marks`, `${JUDGES.length} judges`, cfg.scoring_open === false ? 'Scoring closed' : ''] },
     { id: 'board', icon: '🏆', title: 'Live Leaderboard', desk: true,
       blurb: 'Team totals and ranked participants, updating as marks come in.',
       chips: [`${sum.students.length} ranked`, leader && leader.entries > 0 ? `Leading: ${tn(leader.team)}` : 'No marks yet'] },
@@ -317,68 +932,100 @@ export default function AdminAccess() {
       blurb: 'Who each team picked, with chest and registration numbers.',
       chips: [stats ? `${stats.selected} selected` : '…'] },
     { id: 'settings', icon: '⚙️', title: 'Settings', desk: false,
-      blurb: 'Full control: participants, marks, event setup and reset tools. Has its own password.',
+      blurb: 'Full control: participants, scoring, events, look, security, data and reset tools. Has its own password.',
       chips: ['Full control', 'Works on phones'] },
   ];
 
   return (
-    <Page>
+    <Page theme={theme} motion={bg.motion}>
       <header className="mb-8 flex items-center justify-between gap-4">
-        <h1 className="bg-linear-to-r from-white to-red-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">{titles[current]}</h1>
+        <h1 className="bg-linear-to-r from-white to-red-400 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl">{titles[selectedEvent ? current : 'home']}</h1>
         <div className="flex shrink-0 gap-4 text-sm">
           <Link to="/" className="text-zinc-400 hover:text-white">Home</Link>
           <button onClick={lock} className="text-red-400 hover:text-red-300">Lock</button>
         </div>
       </header>
 
-      {current !== 'home' && (
-        <button type="button" onClick={goHome} className={`${GHOST} mb-6 rounded-full py-2`}>← All sections</button>
-      )}
+      <EventSelector options={eventOptions} value={selectedEvent} onChange={chooseEvent} unknown={eventUnknown ? eventParam : ''} subEvents={events} stats={stats} />
 
-      {!desktop && current === 'home' && (
-        <p className={`mb-6 p-4 text-sm text-zinc-300 ${GLASS} ${ACTIVE}`}>
-          Admin tools open on a laptop. On a phone you can use Settings.
-        </p>
-      )}
+      {!selectedEvent && (eventPending ? <WorkspaceLoading label="Loading event" /> : <EventEmptyState />)}
 
-      <div key={current} className="fade-up">
-        {current === 'home' && (
-          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-            {cards.map((c) => {
-              const off = !desktop && c.desk;
-              return (
-                <article key={c.id}
-                  className={`group relative flex h-85 flex-col justify-end overflow-hidden ${GLASS} ${IDLE} transition duration-300 ${off ? 'opacity-45' : 'hover:-translate-y-1 hover:border-red-500/50'}`}>
-                  <div className="absolute inset-0 bg-linear-to-b from-red-600/35 via-red-950/25 to-black" />
-                  <div className="absolute -top-16 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-red-500/30 blur-[70px]" />
-                  <div className="absolute inset-x-0 top-8 flex justify-center text-6xl drop-shadow-[0_8px_24px_rgba(239,68,68,0.5)] transition duration-300 group-hover:scale-110">{c.icon}</div>
-                  <div className="absolute inset-x-0 bottom-0 h-3/5 bg-linear-to-t from-black via-black/85 to-transparent" />
-                  <div className="relative space-y-3 p-6">
-                    <h2 className="text-xl font-semibold">{c.title}</h2>
-                    <p className="min-h-15 text-sm leading-relaxed text-zinc-400">{c.blurb}</p>
-                    <div className="flex flex-wrap gap-2">{c.chips.filter(Boolean).map((x) => <Soft key={x}>{x}</Soft>)}</div>
-                    <button type="button" disabled={off} onClick={() => open(c.id)}
-                      className="w-full rounded-full bg-white py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400">
-                      {off ? 'Open on a laptop' : 'Open'}
-                    </button>
+      {selectedEvent && (
+        <ScopeContext.Provider value={scope}>
+          {current !== 'home' && (
+            <button type="button" onClick={goHome} className={`${GHOST} mb-6 rounded-full py-2`}>← All sections</button>
+          )}
+
+          {!desktop && current === 'home' && (
+            <p className={`mb-6 p-4 text-sm text-zinc-300 ${GLASS} ${ACTIVE}`}>
+              Admin tools open on a laptop. On a phone you can use Settings.
+            </p>
+          )}
+
+          {peopleError && (
+            <div role="alert" className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-500/40 bg-red-500/10 px-5 py-4 text-sm text-red-300">
+              <span>Could not load participants for {selectedEvent}: {peopleError}</span>
+              <button type="button" className={GHOST} onClick={loadStats}>Try again</button>
+            </div>
+          )}
+
+          {loadingEvent ? (
+            <WorkspaceLoading label={`Loading ${selectedEvent}`} />
+          ) : (
+            <>
+              {noRecords && (
+                <div role="status" className={`fade-up mb-6 space-y-1 p-6 text-center ${GLASS} ${IDLE}`}>
+                  <p className="text-lg font-semibold">No participants found for {selectedEvent}</p>
+                  <p className="text-sm text-zinc-400">
+                    Nothing is registered under this event yet. Add people from Settings → Participants, or pick another event.
+                  </p>
+                </div>
+              )}
+
+              <div key={`${current}:${selectedKey}`} className="fade-up">
+                {current === 'home' && (
+                  <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                    {cards.map((c) => {
+                      const off = !desktop && c.desk;
+                      return (
+                        <article key={c.id}
+                          className={`group relative flex h-85 flex-col justify-end overflow-hidden ${GLASS} ${IDLE} transition duration-300 ${off ? 'opacity-45' : 'hover:-translate-y-1 hover:border-red-500/50'}`}>
+                          <div className="absolute inset-0" style={{ background: `linear-gradient(155deg, ${tc[0]}73 0%, ${tc[1]}40 42%, #000 100%)` }} />
+                          <div className="absolute -top-20 left-1/2 h-60 w-60 -translate-x-1/2 rounded-full" style={{ background: `radial-gradient(circle, ${tc[2]}66 0%, ${tc[2]}00 68%)` }} />
+                          <div className="absolute inset-x-0 top-8 flex justify-center text-6xl drop-shadow-[0_8px_24px_rgba(239,68,68,0.5)] transition duration-300 group-hover:scale-110">{c.icon}</div>
+                          <div className="absolute inset-x-0 bottom-0 h-3/5 bg-linear-to-t from-black via-black/85 to-transparent" />
+                          <div className="relative space-y-3 p-6">
+                            <h2 className="text-xl font-semibold">{c.title}</h2>
+                            <p className="min-h-15 text-sm leading-relaxed text-zinc-400">{c.blurb}</p>
+                            <div className="flex flex-wrap gap-2">{c.chips.filter(Boolean).map((x) => <Soft key={x}>{x}</Soft>)}</div>
+                            <button type="button" disabled={off} onClick={() => open(c.id)}
+                              className="w-full rounded-full bg-white py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400">
+                              {off ? 'Open on a laptop' : 'Open'}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })}
                   </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
+                )}
 
-        {current === 'allot' && <AllotPanel tn={tn} stats={stats} onChanged={loadStats} />}
-        {current === 'scores' && <ScoresPanel rows={rows} cfg={cfg} tn={tn} sum={sum} />}
-        {current === 'board' && <Board sum={sum} cats={cfg.categories} tn={tn} />}
-        {current === 'overview' && <OverviewPanel stats={stats} tn={tn} />}
-        {current === 'teams' && <TeamsPanel tn={tn} />}
+                {current === 'allot' && <AllotPanel tn={tn} stats={stats} events={events} onChanged={loadStats} />}
+                {current === 'scores' && <ScoresPanel rows={scopedRows} cfg={scopedCfg} tn={tn} sum={sum} />}
+                {current === 'board' && <Board sum={sum} cats={scopedCats} tn={tn} />}
+                {current === 'overview' && <OverviewPanel stats={stats} tn={tn} />}
+                {current === 'teams' && <TeamsPanel tn={tn} />}
 
-        {current === 'settings' && !settingsOk && <SettingsGate onOpen={() => setSettingsOk(true)} />}
-        {current === 'settings' && settingsOk && (
-          <SettingsArea cfg={cfg} tn={tn} rows={rows} reloadCfg={reloadCfg} reloadRows={loadRows} onChanged={loadStats} />
-        )}
-      </div>
+                {current === 'settings' && !settingsOk && <SettingsGate onOpen={() => setSettingsOk(true)} />}
+                {current === 'settings' && settingsOk && (
+                  <SettingsArea cfg={cfg} tn={tn} rows={scopedRows} events={events}
+                    reloadCfg={reloadCfg} reloadRows={loadRows} onChanged={loadStats}
+                    bg={bg} setBg={setBg} autoLock={autoLock} setAutoLock={setAutoLock} onLock={lock} />
+                )}
+              </div>
+            </>
+          )}
+        </ScopeContext.Provider>
+      )}
     </Page>
   );
 }
@@ -410,7 +1057,8 @@ function SettingsGate({ onOpen }) {
 /* =========================================================================
    01  ALLOT CHEST NUMBER  (auto-fill details, add other events, allot chest)
    ========================================================================= */
-function AllotPanel({ tn, stats, onChanged }) {
+function AllotPanel({ tn, stats, events, onChanged }) {
+  const scope = useScope();
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
   const [hi, setHi] = useState(0);
@@ -424,6 +1072,8 @@ function AllotPanel({ tn, stats, onChanged }) {
   const [msg, setMsg] = useState(null);
   const [done, setDone] = useState(null);
   const [recent, setRecent] = useState([]);
+
+  const groups = useMemo(() => [...new Set(events.map((e) => e.group))], [events]);
 
   const nextFree = async () => {
     try { setChest(String(await rpc('dyc_next_chest'))); } catch { setChest(''); }
@@ -441,14 +1091,14 @@ function AllotPanel({ tn, stats, onChanged }) {
 
   // live lookup while typing
   useEffect(() => {
-    if (picked) return;
+    if (picked) return undefined;
     const term = q.trim();
-    if (!term) { setResults([]); setSearched(false); return; }
+    if (!term) { setResults([]); setSearched(false); return undefined; }
     let live = true;
     setSearching(true);
     const t = setTimeout(async () => {
       try {
-        const list = (await rpc('dyc_list', { p_q: term, p_limit: 8 })) || [];
+        const list = await fetchPeople(scope, term, 8);
         if (!live) return;
         setResults(list);
         setHi(0);
@@ -477,16 +1127,16 @@ function AllotPanel({ tn, stats, onChanged }) {
   const isPrimary = (ev) => matches(primary, ev);
   const isExtra = (ev) => extras.some((x) => matches(x, ev));
   const isOn = (ev) => isPrimary(ev) || isExtra(ev);
-  const primaryListed = EVENTS.some(isPrimary);
-  const orphans = extras.filter((x) => !EVENTS.some((ev) => matches(x, ev))); // saved earlier, not in the list
+  const primaryListed = events.some(isPrimary);
+  const orphans = extras.filter((x) => !events.some((ev) => matches(x, ev))); // saved earlier, not in the list
   const listedNames = [
     ...(primary && !primaryListed ? [primary] : []),
-    ...EVENTS.filter(isOn).map((ev) => ev.name),
+    ...events.filter(isOn).map((ev) => ev.name),
   ];
   const eventCount = listedNames.length + orphans.length;
 
   const evFilter = norm(evQ);
-  const shownEvents = EVENTS.filter((ev) => !evFilter || norm(`${ev.name} ${ev.group}`).includes(evFilter));
+  const shownEvents = events.filter((ev) => !evFilter || norm(`${ev.name} ${ev.group}`).includes(evFilter));
 
   const saveEvents = async (next) => {
     const before = extras;
@@ -646,11 +1296,11 @@ function AllotPanel({ tn, stats, onChanged }) {
                 </div>
 
                 <input className={`${INPUT} py-2.5 text-sm`} value={evQ} onChange={(e) => setEvQ(e.target.value)}
-                  placeholder={`Search ${EVENTS.length} events…`} />
+                  placeholder={`Search ${events.length} events…`} />
 
                 <div className="max-h-110 space-y-5 overflow-y-auto pr-1">
                   {shownEvents.length === 0 && <p className="text-sm text-zinc-500">No event matches that search.</p>}
-                  {GROUPS.map((g) => {
+                  {groups.map((g) => {
                     const list = shownEvents.filter((ev) => ev.group === g);
                     if (!list.length) return null;
                     return (
@@ -729,6 +1379,7 @@ function AllotPanel({ tn, stats, onChanged }) {
    02  SCORE CONTROL (enter or override any judge's mark)
    ========================================================================= */
 function ScoresPanel({ rows, cfg, tn, sum }) {
+  const scope = useScope();
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -741,6 +1392,7 @@ function ScoresPanel({ rows, cfg, tn, sum }) {
 
   const cat = category || cfg.categories[0];
   const max = Number(cfg.max_score);
+  const step = Number(cfg.score_step) || 0.5;
 
   const existing = useMemo(
     () => (sel ? rows.filter((r) => String(r.chest_no) === String(sel.chest_no) && r.category === cat) : []),
@@ -755,20 +1407,20 @@ function ScoresPanel({ rows, cfg, tn, sum }) {
   }, [sel?.chest_no, cat, sig]);
 
   useEffect(() => {
-    if (sel) return;
+    if (sel) return undefined;
     const term = q.trim();
-    if (!term) { setResults([]); setSearching(false); return; }
+    if (!term) { setResults([]); setSearching(false); return undefined; }
     let live = true;
     setSearching(true);
     const t = setTimeout(async () => {
       try {
-        const list = (await rpc('dyc_list', { p_q: term, p_limit: 8 })) || [];
+        const list = await fetchPeople(scope, term, 8);
         if (live) setResults(list);
       } catch (e) { if (live) setMsg({ ok: false, text: e.message }); }
       finally { if (live) setSearching(false); }
     }, 250);
     return () => { live = false; clearTimeout(t); };
-  }, [q, sel]);
+  }, [q, sel, scope]);
 
   const pick = (r) => {
     setSel(r);
@@ -828,6 +1480,12 @@ function ScoresPanel({ rows, cfg, tn, sum }) {
           </p>
         </div>
 
+        {cfg.scoring_open === false && (
+          <p className="rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            Scoring is marked closed in Settings → Scoring. You can still edit marks here as admin.
+          </p>
+        )}
+
         <div className="relative">
           <label className="text-sm text-zinc-400">Registration No.</label>
           <div className="flex gap-2">
@@ -881,7 +1539,7 @@ function ScoresPanel({ rows, cfg, tn, sum }) {
                 return (
                   <div key={j} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                     <p className="mb-2 text-sm font-semibold">Judge {j}</p>
-                    <input type="number" step="0.5" min="0" max={max} className={INPUT} placeholder="No mark"
+                    <input type="number" step={step} min="0" max={max} className={INPUT} placeholder="No mark"
                       value={vals[j] ?? ''} onChange={(e) => setVals({ ...vals, [j]: e.target.value })} />
                     <p className="mt-2 text-xs text-zinc-500">{cur ? `Currently ${cur.score}` : 'Not scored yet'}</p>
                   </div>
@@ -923,7 +1581,10 @@ function Board({ sum, cats, tn, onEdit }) {
 
       <section>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold">Ranking <span className="ml-2 text-xs text-green-400">● live</span></h2>
+          <h2 className="text-xl font-semibold">
+            Ranking <span className="ml-2 text-xs text-green-400">● live</span>
+            <span className="ml-2 text-xs font-normal text-zinc-500">by {sum.rankBy === 'total' ? 'total score' : 'average score'}</span>
+          </h2>
           <div className="flex flex-wrap gap-2">
             {['All', ...cats].map((c) => (
               <button key={c} type="button" onClick={() => setCat(c)}
@@ -1066,8 +1727,8 @@ function OverviewPanel({ stats, tn }) {
       </div>
 
       <p className="text-sm text-zinc-400">
-        {stats.due_removal} participant{stats.due_removal === 1 ? '' : 's'} arrived more than 5 days ago and were never picked.
-        Remove them from Settings → Reset tools.
+        {stats.due_removal ?? '…'} participant{stats.due_removal === 1 ? '' : 's'} across all events arrived more than 5 days ago and were never picked.
+        Remove them from Settings → Reset tools (applies to every event).
       </p>
     </div>
   );
@@ -1077,7 +1738,8 @@ function OverviewPanel({ stats, tn }) {
    05  TEAM SELECTIONS
    ========================================================================= */
 function TeamsPanel({ tn }) {
-  const [members] = usePoll(() => rpc('dyc_list', { p_q: '', p_limit: 1000 }), []);
+  const scope = useScope();
+  const [members] = usePoll(() => fetchPeople(scope, '', 1000), [scope]);
   if (!members) return <p className="text-zinc-500">Loading…</p>;
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -1110,10 +1772,15 @@ function TeamsPanel({ tn }) {
 /* =========================================================================
    06  SETTINGS (full control, works on phones)
    ========================================================================= */
-function SettingsArea({ cfg, tn, rows, reloadCfg, reloadRows, onChanged }) {
+function SettingsArea({ cfg, tn, rows, events, reloadCfg, reloadRows, onChanged, bg, setBg, autoLock, setAutoLock, onLock }) {
   const [tab, setTab] = useState('people');
-  const judges = cfg.judge_names || {}; // saved with the other event settings
-  const tabs = [['people', '👥 Participants'], ['judges', '🧑‍⚖️ Judges'], ['marks', '📝 Score records'], ['event', '🎛️ Event setup'], ['danger', '⚠️ Reset tools']];
+  // memoised so the Judges tab keeps its unsaved edits when the page refreshes in the background
+  const judges = useMemo(() => cfg.judge_names || {}, [cfg.judge_names]);
+  const tabs = [
+    ['people', '👥 Participants'], ['judges', '🧑‍⚖️ Judges'], ['marks', '📝 Score records'],
+    ['scoring', '🎚️ Scoring'], ['events', '🗓️ Events'], ['event', '🎛️ Event setup'],
+    ['look', '🎨 Appearance'], ['security', '🔐 Security'], ['data', '💾 Data'], ['danger', '⚠️ Reset tools'],
+  ];
   return (
     <div className="space-y-6">
       <nav className="flex gap-2 overflow-x-auto pb-1">
@@ -1127,8 +1794,13 @@ function SettingsArea({ cfg, tn, rows, reloadCfg, reloadRows, onChanged }) {
       <div key={tab} className="fade-up">
         {tab === 'people' && <PeoplePane cfg={cfg} tn={tn} onChanged={onChanged} />}
         {tab === 'judges' && <JudgesPane tn={tn} judges={judges} reloadCfg={reloadCfg} />}
-        {tab === 'marks' && <MarksPane rows={rows} tn={tn} reloadRows={reloadRows} judges={judges} />}
+        {tab === 'marks' && <MarksPane rows={rows} tn={tn} reloadRows={reloadRows} judges={judges} step={Number(cfg.score_step) || 0.5} />}
+        {tab === 'scoring' && <ScoringPane cfg={cfg} reloadCfg={reloadCfg} />}
+        {tab === 'events' && <EventsPane events={events} reloadCfg={reloadCfg} />}
         {tab === 'event' && <EventPane cfg={cfg} reloadCfg={reloadCfg} />}
+        {tab === 'look' && <AppearancePane bg={bg} setBg={setBg} />}
+        {tab === 'security' && <SecurityPane autoLock={autoLock} setAutoLock={setAutoLock} setBg={setBg} onLock={onLock} />}
+        {tab === 'data' && <DataPane cfg={cfg} rows={rows} tn={tn} onChanged={onChanged} />}
         {tab === 'danger' && <DangerPane reloadRows={reloadRows} onChanged={onChanged} />}
       </div>
     </div>
@@ -1138,15 +1810,16 @@ function SettingsArea({ cfg, tn, rows, reloadCfg, reloadRows, onChanged }) {
 const EMPTY = { registration_no: '', student_name: '', phone: '', email: '', category: '', chest_no: '', team_no: '' };
 
 function PeoplePane({ tn, onChanged }) {
+  const scope = useScope();
   const [q, setQ] = useState('');
   const [list, setList] = useState([]);
   const [edit, setEdit] = useState(null);
   const [msg, setMsg] = useState(null);
 
   const load = useCallback(async () => {
-    try { setList((await rpc('dyc_list', { p_q: q.trim(), p_limit: 300 })) || []); }
+    try { setList(await fetchPeople(scope, q.trim(), 300)); }
     catch (e) { setMsg({ ok: false, text: e.message }); }
-  }, [q]);
+  }, [q, scope]);
   useEffect(() => { const t = setTimeout(load, 250); return () => clearTimeout(t); }, [load]);
 
   const set = (k) => (v) => setEdit((e) => ({ ...e, [k]: v }));
@@ -1158,7 +1831,11 @@ function PeoplePane({ tn, onChanged }) {
     try {
       const res = await rpc('dyc_save_participant', { p_id: id ? String(id) : '', p_data: data });
       if (!res?.ok) throw new Error(res?.error || 'Could not save.');
-      setMsg({ ok: true, text: id ? 'Changes saved.' : 'Participant added.' });
+      const listed = scope.has(data);
+      setMsg({
+        ok: true,
+        text: `${id ? 'Changes saved.' : 'Participant added.'}${listed ? '' : ` It will not be listed under ${scope.label} because its category does not match this event.`}`,
+      });
       setEdit(null); load(); onChanged();
     } catch (e) { setMsg({ ok: false, text: e.message }); }
   };
@@ -1175,13 +1852,13 @@ function PeoplePane({ tn, onChanged }) {
   return (
     <div className={`space-y-4 p-5 sm:p-6 ${GLASS} ${IDLE}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold">All participants</h2>
+        <h2 className="text-xl font-semibold">{scope.label} participants</h2>
         <div className="flex gap-2">
           <button className={GHOST}
-            onClick={() => downloadCsv('participants.csv', list.map(({ id, extra_events, ...r }) => ({ ...r, extra_events: (extra_events || []).join('; ') })))}>
+            onClick={() => downloadCsv(scope.file('participants'), list.map(({ id, extra_events, ...r }) => ({ ...r, extra_events: (extra_events || []).join('; ') })))}>
             Export CSV
           </button>
-          <button className={BTN} onClick={() => setEdit({ ...EMPTY })}>+ Add</button>
+          <button className={BTN} onClick={() => setEdit({ ...EMPTY, category: scope.defaultCategory })}>+ Add</button>
         </div>
       </div>
       <input className={INPUT} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, registration no., chest no. or phone" />
@@ -1323,7 +2000,8 @@ function JudgesPane({ tn, judges, reloadCfg }) {
   );
 }
 
-function MarksPane({ rows, tn, reloadRows, judges = {} }) {
+function MarksPane({ rows, tn, reloadRows, judges = {}, step = 0.5 }) {
+  const scope = useScope();
   const [q, setQ] = useState('');
   const [drafts, setDrafts] = useState({});
   const [msg, setMsg] = useState(null);
@@ -1362,7 +2040,7 @@ function MarksPane({ rows, tn, reloadRows, judges = {} }) {
           <p className="text-sm text-zinc-400">Change or delete any mark from any judge.</p>
         </div>
         <button className={GHOST}
-          onClick={() => downloadCsv('scores.csv', rows.map((r) => ({
+          onClick={() => downloadCsv(scope.file('scores'), rows.map((r) => ({
             student: r.student_name, registration_no: r.registration_no, chest_no: r.chest_no,
             team: tn(r.team), category: r.category, judge: r.judge, score: r.score,
           })))}>
@@ -1388,7 +2066,7 @@ function MarksPane({ rows, tn, reloadRows, judges = {} }) {
                   <td className="p-3">{r.category}</td>
                   <td className="p-3">J{r.judge}{judges[`${r.team}-${r.judge}`] && <span className="block text-xs text-zinc-500">{judges[`${r.team}-${r.judge}`]}</span>}</td>
                   <td className="p-3">
-                    <input type="number" step="0.5" className={`${INPUT} w-24 py-2`} value={drafts[r.id] ?? r.score ?? ''}
+                    <input type="number" step={step} className={`${INPUT} w-24 py-2`} value={drafts[r.id] ?? r.score ?? ''}
                       onChange={(e) => setDrafts({ ...drafts, [r.id]: e.target.value })} />
                   </td>
                   <td className="space-x-3 whitespace-nowrap p-3 text-right">
@@ -1403,6 +2081,128 @@ function MarksPane({ rows, tn, reloadRows, judges = {} }) {
       </div>
       {rows.length > 200 && <p className="text-xs text-zinc-500">Showing the first 200. Use search to narrow down.</p>}
       <Msg m={msg} />
+    </div>
+  );
+}
+
+/* ---------- NEW: scoring controls ---------- */
+function ScoringPane({ cfg, reloadCfg }) {
+  const [put, msg, busy] = usePut(reloadCfg);
+  const open = cfg.scoring_open !== false;
+  const step = Number(cfg.score_step) || 0.5;
+  const rankBy = cfg.rank_by === 'total' ? 'total' : 'avg';
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <Section title="Scoring status"
+        hint="Saved with the event settings so judge screens can read it. Admin screens can always edit marks.">
+        <Seg value={open ? 'open' : 'closed'} disabled={busy}
+          options={[['open', '🟢 Open'], ['closed', '🔴 Closed']]}
+          onChange={(v) => put('scoring_open', v === 'open', v === 'open' ? 'Scoring marked open.' : 'Scoring marked closed.')} />
+      </Section>
+
+      <Section title="Rank participants by" hint="Used by the Live Leaderboard and the ranking inside Score Control.">
+        <Seg value={rankBy} disabled={busy}
+          options={[['avg', 'Average score'], ['total', 'Total score']]}
+          onChange={(v) => put('rank_by', v, `Ranking by ${v === 'total' ? 'total' : 'average'} score.`)} />
+      </Section>
+
+      <Section title="Mark step" hint="How much the up / down arrows change a mark in the mark boxes.">
+        <Seg value={step} disabled={busy}
+          options={[[0.1, '0.1'], [0.25, '0.25'], [0.5, '0.5'], [1, '1']]}
+          onChange={(v) => put('score_step', v, `Mark step set to ${v}.`)} />
+      </Section>
+
+      <Section title="Maximum score" hint="Change it from Settings → Event setup.">
+        <p className="text-3xl font-bold text-red-500">{Number(cfg.max_score)}</p>
+      </Section>
+
+      <div className="md:col-span-2"><Msg m={msg} /></div>
+    </div>
+  );
+}
+
+/* ---------- NEW: manage the events list ---------- */
+function EventsPane({ events, reloadCfg }) {
+  const [list, setList] = useState(events);
+  const [put, msg, busy] = usePut(reloadCfg);
+  const [localMsg, setLocalMsg] = useState(null);
+  useEffect(() => { setList(events); }, [events]);
+
+  const groups = [...new Set(list.map((e) => e.group).filter(Boolean))];
+  const dirty = JSON.stringify(list) !== JSON.stringify(events);
+  const upd = (i, k, v) => setList((l) => l.map((e, j) => (j === i ? { ...e, [k]: v } : e)));
+  const add = () => setList((l) => [...l, { id: '', name: '', group: groups[0] || 'Lifestyle', min: 1, max: 1 }]);
+  const remove = (i) => setList((l) => l.filter((_, j) => j !== i));
+
+  const save = () => {
+    setLocalMsg(null);
+    const seen = new Set();
+    const used = new Set();
+    const clean = [];
+    for (let i = 0; i < list.length; i += 1) {
+      const e = list[i];
+      const name = String(e.name).trim();
+      if (!name) return setLocalMsg({ ok: false, text: `Row ${i + 1}: give the event a name.` });
+      if (seen.has(norm(name))) return setLocalMsg({ ok: false, text: `"${name}" appears twice.` });
+      seen.add(norm(name));
+      const min = Math.round(Number(e.min));
+      const max = Math.round(Number(e.max));
+      if (!(min >= 1) || !(max >= min))
+        return setLocalMsg({ ok: false, text: `${name}: team size must be at least 1, and max can't be below min.` });
+      const base = e.id || slug(name);
+      let id = base;
+      let n = 2;
+      while (used.has(id)) { id = `${base}-${n}`; n += 1; }
+      used.add(id);
+      clean.push({ id, name, group: String(e.group).trim() || 'Other', min, max });
+    }
+    if (!clean.length) return setLocalMsg({ ok: false, text: 'Keep at least one event.' });
+    put('events', clean, 'Events saved.');
+  };
+
+  const resetDefaults = () => {
+    if (!window.confirm('Put the original event list back? Press Save afterwards to keep it.')) return;
+    setList(EVENTS.map((e) => ({ ...e })));
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className={`flex flex-wrap items-center justify-between gap-4 p-5 sm:p-6 ${GLASS} ${IDLE}`}>
+        <div>
+          <h2 className="text-xl font-semibold">Events</h2>
+          <p className="text-sm text-zinc-400">
+            These appear on the Allot screen. Participants already saved keep working after a rename, as long as the name stays close to the old one.
+          </p>
+        </div>
+        <Soft>{list.length} events</Soft>
+      </div>
+
+      <datalist id="event-groups">{groups.map((g) => <option key={g} value={g} />)}</datalist>
+
+      <div className={`space-y-3 p-5 sm:p-6 ${GLASS} ${IDLE}`}>
+        <div className="hidden gap-3 px-1 text-xs text-zinc-500 sm:grid sm:grid-cols-[2fr_1.2fr_80px_80px_40px]">
+          <span>Event name</span><span>Group</span><span>Min</span><span>Max</span><span />
+        </div>
+        {list.map((e, i) => (
+          <div key={i} className="grid gap-3 sm:grid-cols-[2fr_1.2fr_80px_80px_40px] sm:items-center">
+            <input className={`${INPUT} py-2.5 text-sm`} value={e.name} placeholder="Event name" onChange={(ev) => upd(i, 'name', ev.target.value)} />
+            <input className={`${INPUT} py-2.5 text-sm`} list="event-groups" value={e.group} placeholder="Group" onChange={(ev) => upd(i, 'group', ev.target.value)} />
+            <input type="number" min="1" className={`${INPUT} py-2.5 text-sm`} value={e.min} placeholder="Min" onChange={(ev) => upd(i, 'min', ev.target.value)} />
+            <input type="number" min="1" className={`${INPUT} py-2.5 text-sm`} value={e.max} placeholder="Max" onChange={(ev) => upd(i, 'max', ev.target.value)} />
+            <button type="button" aria-label={`Remove ${e.name || 'event'}`} onClick={() => remove(i)}
+              className="text-zinc-500 transition hover:text-red-400">✕</button>
+          </div>
+        ))}
+        <button type="button" className={GHOST} onClick={add}>+ Add event</button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button className={BTN} disabled={busy || !dirty} onClick={save}>{busy ? 'Saving…' : dirty ? 'Save events' : 'No changes'}</button>
+        <button className={GHOST} disabled={busy || !dirty} onClick={() => { setList(events); setLocalMsg(null); }}>Undo edits</button>
+        <button className={DANGER} disabled={busy} onClick={resetDefaults}>Restore original list</button>
+      </div>
+      <Msg m={localMsg || msg} />
     </div>
   );
 }
@@ -1474,7 +2274,216 @@ VITE_SETTINGS_PASSWORD=YourSettingsPassword`}</pre>
   );
 }
 
+/* ---------- NEW: appearance (saved on this device) ---------- */
+function AppearancePane({ bg, setBg }) {
+  return (
+    <div className="space-y-6">
+      <Section title="Background theme" hint="Changes the animated background and the colour of the home cards. Saved on this device only.">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+          {Object.entries(THEMES).map(([id, t]) => {
+            const on = bg.theme === id;
+            return (
+              <button key={id} type="button" onClick={() => setBg({ ...bg, theme: id })}
+                className={`overflow-hidden rounded-2xl border text-left transition ${on ? 'border-red-500 shadow-[0_8px_28px_rgba(239,68,68,0.25)]' : 'border-white/10 hover:border-white/30'}`}>
+                <div className="h-20" style={{
+                  background: `radial-gradient(circle at 20% 20%, ${t.colors[0]}cc, transparent 60%), radial-gradient(circle at 80% 70%, ${t.colors[2]}99, transparent 55%), ${t.colors[3]}`,
+                }} />
+                <div className="flex items-center justify-between px-4 py-3 text-sm font-semibold">
+                  <span>{t.name}</span>{on && <span className="text-red-400">✓</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </Section>
+
+      <Section title="Background motion"
+        hint="Animated drifts slowly using only GPU transforms. Pick Static on an older laptop. Your system's reduce-motion setting is always respected.">
+        <Seg value={bg.motion} options={[[true, 'Animated'], [false, 'Static']]} onChange={(v) => setBg({ ...bg, motion: v })} />
+      </Section>
+    </div>
+  );
+}
+
+/* ---------- NEW: security (saved on this device) ---------- */
+function SecurityPane({ autoLock, setAutoLock, setBg, onLock }) {
+  const [msg, setMsg] = useState(null);
+  return (
+    <div className="grid gap-6 md:grid-cols-2">
+      <Section title="Auto-lock" hint="Locks the admin page after this long without a click, key press or scroll. Saved on this device.">
+        <Seg value={autoLock} options={[[0, 'Off'], [5, '5 min'], [10, '10 min'], [15, '15 min'], [30, '30 min'], [60, '1 hour']]}
+          onChange={(v) => { setAutoLock(v); setMsg({ ok: true, text: v ? `Will lock after ${v} min of no activity.` : 'Auto-lock turned off.' }); }} />
+      </Section>
+
+      <Section title="Lock now" hint="Closes the admin page and Settings straight away.">
+        <button className={DANGER} onClick={onLock}>Lock admin page</button>
+      </Section>
+
+      <Section title="This device" className="md:col-span-2"
+        hint="Clears the appearance and auto-lock choices saved in this browser.">
+        <button className={GHOST} onClick={() => { setBg(BG_DEFAULT); setAutoLock(0); setMsg({ ok: true, text: 'Device preferences reset.' }); }}>
+          Reset device preferences
+        </button>
+      </Section>
+      <div className="md:col-span-2"><Msg m={msg} /></div>
+    </div>
+  );
+}
+
+/* ---------- NEW: backups, exports and CSV import ---------- */
+function DataPane({ cfg, rows, tn, onChanged }) {
+  const scope = useScope();
+  const [msg, setMsg] = useState(null);
+  const [busy, setBusy] = useState('');
+  const [csv, setCsv] = useState(null);
+  const [progress, setProgress] = useState(null);
+
+  const loadEventPeople = () => fetchPeople(scope, '', 5000);
+
+  const backup = async () => {
+    setBusy('backup');
+    setMsg(null);
+    try {
+      const participants = await loadEventPeople();
+      downloadFile(
+        `${scope.slug}_backup_${stamp()}.json`,
+        JSON.stringify({ exported_at: new Date().toISOString(), event: scope.label, config: cfg, participants, scores: rows }, null, 2),
+        'application/json'
+      );
+      setMsg({ ok: true, text: `Backup saved: ${participants.length} participants, ${rows.length} marks.` });
+    } catch (e) { setMsg({ ok: false, text: e.message }); }
+    finally { setBusy(''); }
+  };
+
+  const exportPeople = async () => {
+    setBusy('people');
+    setMsg(null);
+    try {
+      const list = await loadEventPeople();
+      if (!list.length) return setMsg({ ok: false, text: 'No participants to export.' });
+      downloadCsv(scope.file('participants'), list.map(({ id, extra_events, ...r }) => ({ ...r, extra_events: (extra_events || []).join('; ') })));
+      setMsg({ ok: true, text: `Exported ${list.length} participants.` });
+    } catch (e) { setMsg({ ok: false, text: e.message }); }
+    finally { setBusy(''); }
+  };
+
+  const exportScores = () => {
+    if (!rows.length) return setMsg({ ok: false, text: 'No marks to export.' });
+    downloadCsv(scope.file('scores'), rows.map((r) => ({
+      student: r.student_name, registration_no: r.registration_no, chest_no: r.chest_no,
+      team: tn(r.team), category: r.category, judge: r.judge, score: r.score,
+    })));
+    setMsg({ ok: true, text: `Exported ${rows.length} marks.` });
+  };
+
+  const pickFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setMsg(null);
+    try {
+      const text = (await file.text()).replace(/^\uFEFF/, '');
+      const table = parseCsv(text);
+      if (table.length < 2) throw new Error('The file needs a header row and at least one participant.');
+      const keys = table[0].map((h) => HEADER_MAP[norm(h)] || null);
+      if (!keys.includes('student_name') && !keys.includes('registration_no'))
+        throw new Error('Could not find a name or registration column in the header row.');
+      const items = table.slice(1)
+        .map((r) => {
+          const o = {};
+          keys.forEach((k, i) => { if (k) o[k] = String(r[i] ?? '').trim(); });
+          return o;
+        })
+        .filter((o) => o.student_name || o.registration_no)
+        .map((o) => (!o.category && scope.defaultCategory ? { ...o, category: scope.defaultCategory } : o));
+      if (!items.length) throw new Error('No usable rows found.');
+      setCsv({ name: file.name, items, columns: [...new Set(keys.filter(Boolean))] });
+    } catch (err) {
+      setCsv(null);
+      setMsg({ ok: false, text: err.message });
+    }
+  };
+
+  const runImport = async () => {
+    const { items, name } = csv;
+    if (!window.confirm(`Import ${items.length} participants from ${name}? Duplicates are not checked here.`)) return;
+    setBusy('import');
+    setMsg(null);
+    let ok = 0;
+    const errors = [];
+    for (let i = 0; i < items.length; i += 1) {
+      setProgress({ done: i, total: items.length });
+      try {
+        const res = await rpc('dyc_save_participant', { p_id: '', p_data: items[i] });
+        if (!res?.ok) throw new Error(res?.error || 'Rejected');
+        ok += 1;
+      } catch (e) { errors.push(`Row ${i + 2}: ${e.message}`); }
+    }
+    setProgress(null);
+    setBusy('');
+    setCsv(null);
+    onChanged();
+    setMsg({
+      ok: errors.length === 0,
+      text: `Imported ${ok} of ${items.length}.${errors.length ? ` ${errors.slice(0, 3).join(' · ')}` : ''}`,
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-3">
+        <Section title="Full backup" hint={`Settings plus every ${scope.label} participant and mark, in one JSON file.`}>
+          <button className={BTN} disabled={!!busy} onClick={backup}>{busy === 'backup' ? 'Preparing…' : 'Download backup'}</button>
+        </Section>
+        <Section title="Participants" hint={`Everyone registered for ${scope.label}, as a spreadsheet-friendly CSV.`}>
+          <button className={GHOST} disabled={!!busy} onClick={exportPeople}>{busy === 'people' ? 'Preparing…' : 'Export participants CSV'}</button>
+        </Section>
+        <Section title="Marks" hint={`Every ${scope.label} judge mark with team and category.`}>
+          <button className={GHOST} disabled={!!busy} onClick={exportScores}>Export scores CSV</button>
+        </Section>
+      </div>
+
+      <Section title="Import participants from CSV"
+        hint={`First row must be headers. Recognised: registration no, name, phone, email, category, chest no, team no.${scope.defaultCategory ? ` Rows without a category are filed under ${scope.label}.` : ''}`}>
+        <input type="file" accept=".csv,text/csv" disabled={!!busy} onChange={pickFile}
+          className="block w-full text-sm text-zinc-400 file:mr-4 file:cursor-pointer file:rounded-xl file:border-0 file:bg-red-500 file:px-5 file:py-2.5 file:font-semibold file:text-black hover:file:bg-red-400" />
+
+        {csv && (
+          <div className="fade-up space-y-4">
+            <p className="text-sm text-zinc-300">
+              <span className="font-semibold">{csv.name}</span> · {csv.items.length} participant{csv.items.length === 1 ? '' : 's'} ready · columns: {csv.columns.join(', ')}
+            </p>
+            <div className="overflow-x-auto rounded-2xl border border-white/10">
+              <table className="w-full min-w-120 text-sm">
+                <thead className="bg-white/5 text-left text-zinc-400">
+                  <tr>{csv.columns.map((c) => <th key={c} className="p-3">{c}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {csv.items.slice(0, 5).map((r, i) => (
+                    <tr key={i} className="border-t border-white/5">
+                      {csv.columns.map((c) => <td key={c} className="p-3">{r[c] || '—'}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {csv.items.length > 5 && <p className="text-xs text-zinc-500">Showing the first 5 rows.</p>}
+            <div className="flex flex-wrap items-center gap-3">
+              <button className={BTN} disabled={busy === 'import'} onClick={runImport}>
+                {busy === 'import' && progress ? `Importing ${progress.done + 1} / ${progress.total}…` : `Import ${csv.items.length} participants`}
+              </button>
+              <button className={GHOST} disabled={busy === 'import'} onClick={() => setCsv(null)}>Cancel</button>
+            </div>
+          </div>
+        )}
+      </Section>
+      <Msg m={msg} />
+    </div>
+  );
+}
+
 function DangerPane({ reloadRows, onChanged }) {
+  const scope = useScope();
   const [msg, setMsg] = useState(null);
   const [busy, setBusy] = useState('');
 
@@ -1498,7 +2507,10 @@ function DangerPane({ reloadRows, onChanged }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-zinc-400">These actions cannot be undone. Export a CSV from the other tabs first if you may need the data.</p>
+      <p role="alert" className="rounded-2xl border border-amber-500/40 bg-amber-500/10 px-5 py-4 text-sm text-amber-300">
+        Reset tools apply to <span className="font-semibold">all events</span>, not only {scope.label}.
+      </p>
+      <p className="text-sm text-zinc-400">These actions cannot be undone. Download a backup from Settings → Data first if you may need the data.</p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map(([id, fn, title, blurb]) => (
           <div key={id} className="flex flex-col justify-between gap-4 rounded-3xl border border-red-500/30 bg-red-950/20 p-6">
