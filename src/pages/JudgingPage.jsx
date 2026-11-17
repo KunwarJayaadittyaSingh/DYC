@@ -263,7 +263,7 @@ function Toast({ text, onDone }) {
 }
 
 function Stepper({ step }) {
-  const items = ['Choose team', 'Your name', 'Pick student', 'Give mark'];
+  const items = ['Choose team', 'Your name', 'Pick student'];
   return (
     <ol className="flex items-center gap-2 text-sm">
       {items.map((l, i) => (
@@ -429,9 +429,9 @@ export default function JudgingPage() {
       </Page>
     );
 
-  const titles = { home: 'Judging Panel', score: 'Score a Student', roster: 'Team Students' };
+  const titles = { home: 'Judging Panel', score: 'Select a Student', roster: 'Team Students' };
   const cards = [
-    { id: 'score', icon: 'pen', title: 'Score a Student',
+    { id: 'score', icon: 'pen', title: 'Select a Student',
       blurb: 'Pick your team, choose a student, set a mark and lock it in.',
       chips: [`${rows.filter((r) => r.judge === judge).length} marks by you`, lastTeam ? `Continue with ${tn(lastTeam)}` : null] },
     { id: 'roster', icon: 'users', title: 'Team Students',
@@ -642,7 +642,7 @@ function ScorePanel({ rows, cfg, tn, judge, rosters, judgeNames, setJudgeName })
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState(null);
   const [toast, setToast] = useState('');
-  const [list, err] = useRoster(team);
+  const [list, err, reloadRoster] = useRoster(team);
   const formRef = useRef(null);
 
   // judge's name for this team + judge slot; scoring opens only after it is added
@@ -779,6 +779,9 @@ function ScorePanel({ rows, cfg, tn, judge, rosters, judgeNames, setJudgeName })
             <CategoryChips cats={cfg.categories} value={cat} onPick={(c) => { setCategory(c); setMsg(null); setConfirming(false); }} />
           </div>
 
+          <PickByChest key={team} team={team} tn={tn}
+            onAssigned={(text) => { setToast(text); reloadRoster(); }} />
+
           <div className={`flex items-center gap-4 p-4 ${GLASS} ${IDLE}`}>
             <Ring value={done} total={L.length} size={52} stroke={5} color={hex(team)}>
               <span className="text-xs">{L.length ? Math.round((done / L.length) * 100) : 0}%</span>
@@ -797,7 +800,7 @@ function ScorePanel({ rows, cfg, tn, judge, rosters, judgeNames, setJudgeName })
           )}
           {list && list.length === 0 && (
             <p className={`p-6 text-sm text-zinc-400 ${GLASS} ${IDLE}`}>
-              {tn(team)} has not picked any students with a chest number yet.
+              No students in {tn(team)} yet. Enter a chest number above to add one.
             </p>
           )}
 
@@ -888,6 +891,152 @@ function ScorePanel({ rows, cfg, tn, judge, rosters, judgeNames, setJudgeName })
       )}
 
       {toast && <Toast text={toast} onDone={() => setToast('')} />}
+    </div>
+  );
+}
+
+/* =========================================================================
+   ADD A STUDENT TO THE TEAM BY CHEST NUMBER
+   Type a chest number -> the student's details appear -> tap "Add to team".
+   ========================================================================= */
+function PickByChest({ team, tn, onAssigned }) {
+  const [q, setQ] = useState('');
+  const [cands, setCands] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [stu, setStu] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const hasChest = (r) => r.chest_no !== null && r.chest_no !== undefined && String(r.chest_no).trim() !== '';
+
+  // look up while typing (exact chest number first, otherwise close matches)
+  useEffect(() => {
+    if (stu) return undefined;
+    const term = q.trim().toLowerCase();
+    if (!term) { setCands([]); setSearched(false); setSearching(false); return undefined; }
+    let live = true;
+    setSearching(true);
+    const t = setTimeout(async () => {
+      try {
+        const list = ((await rpc('dyc_list', { p_q: term, p_limit: 60 })) || []).filter(hasChest);
+        if (!live) return;
+        const exact = list.filter((r) => String(r.chest_no).trim().toLowerCase() === term);
+        setCands(exact.length ? exact : list.filter((r) => String(r.chest_no).toLowerCase().includes(term)).slice(0, 6));
+        setSearched(true);
+      } catch (e) { if (live) setMsg({ ok: false, text: e.message }); }
+      finally { if (live) setSearching(false); }
+    }, 250);
+    return () => { live = false; clearTimeout(t); };
+  }, [q, stu]);
+
+  const choose = (r) => { setStu(r); setMsg(null); };
+  const clear = () => { setStu(null); setQ(''); setCands([]); setSearched(false); setMsg(null); };
+
+  const current = stu?.team_no ? Number(stu.team_no) : null;
+  const inThis = current === team;
+  const elsewhere = current && !inThis;
+  const events = stu ? [stu.category, ...(Array.isArray(stu.extra_events) ? stu.extra_events : [])].filter(Boolean) : [];
+
+  const add = async () => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      // same payload shape the admin Settings screen sends, with only the team changed
+      // eslint-disable-next-line no-unused-vars
+      const { id, extra_events, ...rest } = stu;
+      const data = Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, v ?? '']));
+      data.team_no = String(team);
+      const res = await rpc('dyc_save_participant', { p_id: String(id), p_data: data });
+      if (!res?.ok) throw new Error(res?.error || 'Could not add the student.');
+      buzz(35);
+      onAssigned(`${stu.student_name} added to ${tn(team)}`);
+      clear();
+    } catch (e) { setMsg({ ok: false, text: e.message }); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className={`space-y-4 p-5 sm:p-6 ${GLASS} ${stu ? ACTIVE : IDLE}`}>
+      <div className="flex items-center gap-3">
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border"
+          style={{ background: `${hex(team)}22`, borderColor: `${hex(team)}66`, color: hex(team) }}>
+          <Icon name="plus" />
+        </span>
+        <div>
+          <h3 className="text-lg font-semibold">Add a student to {tn(team)}</h3>
+          <p className="text-sm text-zinc-400">Enter the chest number to see the student's details, then add them to the team.</p>
+        </div>
+      </div>
+
+      <div className="relative">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"><Icon name="search" className="h-4 w-4" /></span>
+            <input className={`${INPUT} pl-11`} value={q} inputMode="numeric" autoComplete="off" placeholder="Chest number"
+              aria-label="Chest number"
+              onKeyDown={(e) => { if (e.key === 'Enter' && !stu && cands[0]) { e.preventDefault(); choose(cands[0]); } }}
+              onChange={(e) => { setQ(e.target.value); if (stu) setStu(null); setMsg(null); }} />
+          </div>
+          {(q || stu) && <button type="button" className={GHOST} onClick={clear}>Clear</button>}
+        </div>
+        {searching && <p className="mt-2 text-xs text-zinc-500">Checking…</p>}
+        {!stu && searched && !searching && cands.length === 0 && (
+          <p className="mt-2 text-sm text-red-400">No student has that chest number yet.</p>
+        )}
+      </div>
+
+      {!stu && cands.length > 0 && (
+        <ul className="space-y-2">
+          {cands.map((r) => (
+            <li key={r.id}>
+              <button type="button" onClick={() => choose(r)}
+                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-black/40 px-4 py-3 text-left transition hover:border-red-500/50 active:scale-[0.99]">
+                <Avatar name={r.student_name} team={Number(r.team_no) || team} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{r.student_name}</span>
+                  <span className="text-xs text-zinc-500">Reg. {r.registration_no || '—'} · {r.category || 'No category'}</span>
+                </span>
+                <Chip>Chest {r.chest_no}</Chip>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {stu && (
+        <div className="pop space-y-4">
+          <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/10 bg-black/40 p-4">
+            <Avatar name={stu.student_name} team={current || team} size="h-14 w-14" text="text-lg" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-lg font-semibold leading-tight">{stu.student_name}</p>
+              <p className="text-sm text-zinc-400">Registration No. {stu.registration_no || '—'}</p>
+            </div>
+            <Chip>Chest {stu.chest_no}</Chip>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              ['Category', stu.category || '—'],
+              ['Events', events.length ? events.join(', ') : '—'],
+              ['Team', current ? tn(current) : 'Not picked yet'],
+            ].map(([k, v]) => (
+              <div key={k} className="rounded-xl border border-white/10 bg-black/40 px-4 py-3">
+                <p className="text-xs text-zinc-500">{k}</p>
+                <p className="mt-0.5 wrap-break-word text-sm font-medium">{v}</p>
+              </div>
+            ))}
+          </div>
+
+          {inThis && <p className="text-sm text-green-400">This student is already in {tn(team)}.</p>}
+          {elsewhere && <p className="text-sm text-amber-400">Already picked by {tn(current)}, so they can't be added here.</p>}
+
+          <button type="button" className={`${BTN} w-full`} disabled={busy || inThis || !!elsewhere} onClick={add}>
+            {busy ? 'Adding…' : `Add to ${tn(team)}`}
+          </button>
+        </div>
+      )}
+      <Msg m={msg} />
     </div>
   );
 }

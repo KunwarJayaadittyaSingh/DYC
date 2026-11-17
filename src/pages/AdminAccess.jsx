@@ -658,7 +658,7 @@ function EventSelector({ options, value, onChange, unknown, subEvents = [], stat
               </div>
 
               <ul id="admin-event-list" role="listbox" aria-labelledby="admin-event-label"
-                className="grid max-h-[26rem] grid-cols-1 gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
+                className="grid max-h-104 grid-cols-1 gap-3 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
                 {shown.length === 0 && <li className="col-span-full px-4 py-10 text-center text-sm text-zinc-500">No event matches &quot;{query}&quot;</li>}
                 {shown.map((o, i) => {
                   const on = o.name === value;
